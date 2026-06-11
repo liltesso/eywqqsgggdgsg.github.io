@@ -3,47 +3,59 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Gifts Rental — Merchant Partners</title>
+    <title>Gifts Rental & Sale — Merchant Partners</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="rent.css">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://unpkg.com/@tonconnect/ui@2/dist/tonconnect-ui.min.js"></script>
+    <!--
+      Configure before rent.js loads:
+        window.BACKEND_URL — your FastAPI backend origin
+      Defaults below are safe to edit.
+    -->
+    <script>
+        window.BACKEND_URL = window.BACKEND_URL || '';
+        window.TONCONNECT_MANIFEST = 'https://eywqqsgggdgsg.github.io/tonconnect-manifest.json';
+    </script>
 </head>
 <body>
     <div id="app">
 
         <header class="r-header">
             <div class="r-header-inner">
-                <h1 class="r-title">Gifts <span class="accent">Rental</span></h1>
-                <div class="r-user-chip" id="user-chip" style="display:none">
-                    <span class="r-user-name" id="user-name"></span>
-                </div>
+                <h1 class="r-title">Gifts <span class="accent">Market</span></h1>
+                <div id="ton-connect" class="ton-connect-slot"></div>
             </div>
+
+            <!-- Mode tabs -->
+            <div class="r-tabs" role="tablist">
+                <button class="r-tab active" data-mode="rent" role="tab">Оренда</button>
+                <button class="r-tab" data-mode="sale" role="tab">Продаж</button>
+            </div>
+
+            <!-- Sort filters -->
             <div class="r-filters" id="filters-bar" role="tablist">
                 <button class="filter-chip active" data-sort="popular" role="tab">Популярні</button>
                 <button class="filter-chip" data-sort="price_asc" role="tab">Дешевші</button>
                 <button class="filter-chip" data-sort="price_desc" role="tab">Дорожчі</button>
-                <button class="filter-chip" data-sort="duration" role="tab">Довший термін</button>
+                <button class="filter-chip rent-only" data-sort="duration" role="tab">Довший термін</button>
             </div>
         </header>
 
         <main class="r-grid" id="gifts-grid" aria-live="polite">
-            <div class="gift-skeleton"></div>
-            <div class="gift-skeleton"></div>
-            <div class="gift-skeleton"></div>
-            <div class="gift-skeleton"></div>
-            <div class="gift-skeleton"></div>
-            <div class="gift-skeleton"></div>
+            <div class="gift-skeleton"></div><div class="gift-skeleton"></div>
+            <div class="gift-skeleton"></div><div class="gift-skeleton"></div>
+            <div class="gift-skeleton"></div><div class="gift-skeleton"></div>
         </main>
 
         <div class="r-load-more" id="load-more-container" style="display:none">
             <button class="load-more-btn" id="load-more-btn">Завантажити ще</button>
         </div>
-
     </div>
 
-    <!-- Rental Bottom Sheet -->
+    <!-- Bottom Sheet -->
     <div class="modal-overlay" id="rental-modal" style="display:none" role="dialog" aria-modal="true">
         <div class="modal-sheet" id="modal-sheet">
             <div class="modal-drag-handle"></div>
@@ -55,16 +67,17 @@
                 <div class="modal-gift-info">
                     <h2 class="modal-gift-name" id="modal-name"></h2>
                     <div class="modal-gift-addr" id="modal-addr"></div>
-                    <div class="modal-ppd">
+                    <div class="modal-ppd" id="modal-ppd-wrap">
                         <span class="modal-ppd-stars" id="modal-ppd-stars"></span>
-                        <span class="modal-ppd-label">/ день</span>
+                        <span class="modal-ppd-label" id="modal-ppd-label">/ день</span>
                     </div>
                 </div>
             </div>
 
             <div class="modal-divider"></div>
 
-            <div class="duration-section">
+            <!-- Duration (rent only) -->
+            <div class="duration-section" id="duration-section">
                 <div class="duration-header">
                     <span class="duration-label">Термін оренди</span>
                     <span class="duration-value" id="duration-display">7 днів</span>
@@ -82,8 +95,8 @@
                 <div class="total-row">
                     <span class="total-label">Разом</span>
                     <div class="total-amount-col">
-                        <span class="total-stars" id="total-stars"></span>
-                        <span class="total-ton" id="total-ton"></span>
+                        <span class="total-stars" id="total-ton"></span>
+                        <span class="total-ton" id="total-stars"></span>
                     </div>
                 </div>
                 <div class="discount-row" id="discount-row" style="display:none">
@@ -91,16 +104,28 @@
                 </div>
             </div>
 
+            <!-- Payment method -->
+            <div class="method-toggle" id="method-toggle">
+                <button class="method-btn active" data-method="tonconnect">
+                    <span class="method-ic">💎</span> TON (гаманець)
+                </button>
+                <button class="method-btn" data-method="stars">
+                    <span class="method-ic">⭐</span> Telegram Stars
+                </button>
+            </div>
+
             <button class="rent-btn" id="rent-btn">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-                Орендувати
+                <span id="rent-btn-text">Орендувати</span>
             </button>
 
-            <p class="modal-disclaimer">Подарунок з'явиться у Telegram одразу після оплати. Повернення — автоматично після закінчення терміну.</p>
+            <p class="modal-disclaimer" id="modal-disclaimer">
+                Оплата TON-гаманцем: подарунок одразу зараховується на ваш акаунт.
+                Повернення оренди — автоматично після закінчення терміну.
+            </p>
         </div>
     </div>
 
-    <!-- Success Screen -->
+    <!-- Success -->
     <div class="success-overlay" id="success-screen" style="display:none">
         <div class="success-content">
             <div class="success-anim">
@@ -110,7 +135,7 @@
                     <path d="M23 36l9 9 17-18" stroke="#d41115" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
                 </svg>
             </div>
-            <h2 class="success-title">Оренду оформлено!</h2>
+            <h2 class="success-title" id="success-title">Готово!</h2>
             <p class="success-desc" id="success-desc"></p>
             <button class="success-btn" id="success-btn">Чудово!</button>
         </div>
