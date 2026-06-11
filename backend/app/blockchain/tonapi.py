@@ -18,6 +18,7 @@ from typing import Any
 
 import httpx
 
+from ..retry import with_retry
 from .address import Address, normalize
 
 
@@ -43,7 +44,13 @@ class TonAPIClient:
         await self._client.aclose()
 
     async def _get(self, path: str, params: dict | None = None) -> Any:
-        resp = await self._client.get(path, params=params)
+        async def _do() -> httpx.Response:
+            r = await self._client.get(path, params=params)
+            if r.status_code in (429,) or 500 <= r.status_code < 600:
+                r.raise_for_status()
+            return r
+
+        resp = await with_retry(_do, name=f"TonAPI GET {path}")
         if resp.status_code >= 400:
             try:
                 detail = resp.json()
@@ -53,7 +60,13 @@ class TonAPIClient:
         return resp.json()
 
     async def _post(self, path: str, json: dict) -> Any:
-        resp = await self._client.post(path, json=json)
+        async def _do() -> httpx.Response:
+            r = await self._client.post(path, json=json)
+            if r.status_code in (429,) or 500 <= r.status_code < 600:
+                r.raise_for_status()
+            return r
+
+        resp = await with_retry(_do, name=f"TonAPI POST {path}")
         if resp.status_code >= 400:
             try:
                 detail = resp.json()

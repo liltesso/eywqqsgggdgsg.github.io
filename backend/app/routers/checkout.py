@@ -30,6 +30,7 @@ from ..models import OrderStatus, Transaction, User
 from ..pricing import apply_markup, markup_message, rent_total, ton_to_stars
 from ..schemas import (
     RentCheckoutRequest,
+    RentExtendRequest,
     SaleCheckoutRequest,
     StarsCheckoutResponse,
     TonCheckoutResponse,
@@ -115,6 +116,76 @@ async def rent_checkout(
     invoice = await create_stars_invoice_link(
         title=gift["name"] or "Gift rental",
         description=f"Оренда на {days} дн.",
+        payload=payload,
+        amount_stars=amount_stars,
+    )
+    return StarsCheckoutResponse(invoice_link=invoice, order_id=order.id, amount_stars=amount_stars)
+
+
+# ─── RENT: extend ───────────────────────────────────────────────────────────
+
+@router.post("/rent/extend")
+async def rent_extend(
+    req: RentExtendRequest,
+    user: User = Depends(get_current_user),
+    mrkt: MarketAppClient = Depends(get_marketapp),
+    db: AsyncSession = Depends(get_db),
+):
+    """Extend an existing rental by N additional days.
+
+    Mirrors the rent flow: re-fetch fresh per-day price, build a checkout
+    record and return a signable TonConnect tx or a Stars invoice.
+    """
+    gift = await _find_rent_gift(mrkt, req.nft_address)
+    if gift is None:
+        raise HTTPException(status_code=404, detail="Gift no longer rentable")
+
+    days = req.additional_days
+    provider_total = rent_total(gift["price_per_day_ton"], days, gift["discount_per_day"])
+    customer_total, markup = apply_markup(provider_total)
+
+    payload = uuid.uuid4().hex
+    is_ton = req.method == "tonconnect"
+    order = Transaction(
+        user_id=user.id,
+        kind="rent",
+        nft_address=req.nft_address,
+        nft_name=(gift["name"] or "") + " (extend)",
+        duration_days=days,
+        currency="TON" if is_ton else "XTR",
+        provider_price=provider_total,
+        markup=markup,
+        our_price=customer_total,
+        markup_nano=ton_to_nano(markup) if is_ton else 0,
+        status=(OrderStatus.AWAITING_SIGNATURE if is_ton else OrderStatus.INVOICED).value,
+        payment_method=req.method,
+        invoice_payload=payload,
+    )
+    db.add(order)
+    await db.commit()
+    await db.refresh(order)
+
+    if is_ton:
+        sendtx = await mrkt.rent_extend(
+            req.nft_address,
+            duration_seconds=days * SECONDS_PER_DAY,
+            price_per_day_nano=gift["price_per_day_nano"],
+        )
+        valid_until, messages = _tx_from_sendtx(sendtx)
+        if (mm := markup_message(provider_total)):
+            messages.append(mm)
+        return TonCheckoutResponse(
+            transaction={"valid_until": valid_until, "messages": messages},
+            order_id=order.id,
+            provider_price=provider_total,
+            markup=markup,
+            total_price=customer_total,
+        )
+
+    amount_stars = ton_to_stars(customer_total)
+    invoice = await create_stars_invoice_link(
+        title=(gift["name"] or "Rent extend")[:32],
+        description=f"Продовження оренди на {days} дн.",
         payload=payload,
         amount_stars=amount_stars,
     )

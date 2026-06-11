@@ -3,144 +3,252 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>Gifts Rental & Sale — Merchant Partners</title>
+    <meta name="theme-color" content="#0a0a0a">
+    <title>Gifts Market — Merchant Partners</title>
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="rent.css">
+
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://unpkg.com/@tonconnect/ui@2/dist/tonconnect-ui.min.js"></script>
-    <!--
-      Configure before rent.js loads:
-        window.BACKEND_URL — your FastAPI backend origin
-      Defaults below are safe to edit.
-    -->
     <script>
+        // Configure before rent.js loads. Both are safe to override at runtime.
         window.BACKEND_URL = window.BACKEND_URL || '';
-        window.TONCONNECT_MANIFEST = 'https://eywqqsgggdgsg.github.io/tonconnect-manifest.json';
+        window.TONCONNECT_MANIFEST = window.TONCONNECT_MANIFEST
+            || 'https://eywqqsgggdgsg.github.io/tonconnect-manifest.json';
     </script>
 </head>
-<body>
-    <div id="app">
+<body data-tab="catalog">
 
-        <header class="r-header">
-            <div class="r-header-inner">
+<!-- ╭─────────────────────────────────────────────────────────╮
+     │  CATALOG VIEW                                            │
+     ╰─────────────────────────────────────────────────────────╯ -->
+<section class="view" data-view="catalog">
+
+    <header class="r-header">
+        <div class="r-header-inner">
+            <div class="r-brand">
+                <span class="r-dot"></span>
                 <h1 class="r-title">Gifts <span class="accent">Market</span></h1>
-                <div id="ton-connect" class="ton-connect-slot"></div>
             </div>
-
-            <!-- Mode tabs -->
-            <div class="r-tabs" role="tablist">
-                <button class="r-tab active" data-mode="rent" role="tab">Оренда</button>
-                <button class="r-tab" data-mode="sale" role="tab">Продаж</button>
-            </div>
-
-            <!-- Sort filters -->
-            <div class="r-filters" id="filters-bar" role="tablist">
-                <button class="filter-chip active" data-sort="popular" role="tab">Популярні</button>
-                <button class="filter-chip" data-sort="price_asc" role="tab">Дешевші</button>
-                <button class="filter-chip" data-sort="price_desc" role="tab">Дорожчі</button>
-                <button class="filter-chip rent-only" data-sort="duration" role="tab">Довший термін</button>
-            </div>
-        </header>
-
-        <main class="r-grid" id="gifts-grid" aria-live="polite">
-            <div class="gift-skeleton"></div><div class="gift-skeleton"></div>
-            <div class="gift-skeleton"></div><div class="gift-skeleton"></div>
-            <div class="gift-skeleton"></div><div class="gift-skeleton"></div>
-        </main>
-
-        <div class="r-load-more" id="load-more-container" style="display:none">
-            <button class="load-more-btn" id="load-more-btn">Завантажити ще</button>
+            <div id="ton-connect" class="ton-connect-slot"></div>
         </div>
+
+        <div class="r-search-wrap">
+            <svg class="r-search-ic" viewBox="0 0 24 24" width="16" height="16" fill="none"
+                 stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                <circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/>
+            </svg>
+            <input type="search" id="search-input" placeholder="Пошук подарунків…" autocomplete="off">
+        </div>
+
+        <div class="r-tabs" role="tablist">
+            <button class="r-tab active" data-mode="rent" role="tab">Оренда</button>
+            <button class="r-tab" data-mode="sale" role="tab">Продаж</button>
+        </div>
+
+        <div class="r-filters" id="filters-bar" role="tablist">
+            <button class="filter-chip active" data-sort="popular" role="tab">Популярні</button>
+            <button class="filter-chip" data-sort="price_asc" role="tab">Дешевші</button>
+            <button class="filter-chip" data-sort="price_desc" role="tab">Дорожчі</button>
+            <button class="filter-chip rent-only" data-sort="duration" role="tab">Довший термін</button>
+        </div>
+    </header>
+
+    <main class="r-grid" id="gifts-grid" aria-live="polite">
+        <div class="gift-skeleton"></div><div class="gift-skeleton"></div>
+        <div class="gift-skeleton"></div><div class="gift-skeleton"></div>
+        <div class="gift-skeleton"></div><div class="gift-skeleton"></div>
+    </main>
+
+    <div class="r-load-more" id="load-more-container" style="display:none">
+        <button class="load-more-btn" id="load-more-btn">Завантажити ще</button>
     </div>
+</section>
 
-    <!-- Bottom Sheet -->
-    <div class="modal-overlay" id="rental-modal" style="display:none" role="dialog" aria-modal="true">
-        <div class="modal-sheet" id="modal-sheet">
-            <div class="modal-drag-handle"></div>
+<!-- ╭─────────────────────────────────────────────────────────╮
+     │  MY ORDERS VIEW                                          │
+     ╰─────────────────────────────────────────────────────────╯ -->
+<section class="view hidden" data-view="orders">
+    <header class="r-header simple">
+        <h1 class="r-title">Мої <span class="accent">замовлення</span></h1>
+        <div class="r-tabs" role="tablist" id="orders-filter">
+            <button class="r-tab active" data-kind="" role="tab">Усі</button>
+            <button class="r-tab" data-kind="rent" role="tab">Оренда</button>
+            <button class="r-tab" data-kind="sale" role="tab">Продаж</button>
+        </div>
+    </header>
 
-            <div class="modal-gift-preview">
-                <div class="modal-img-wrap">
-                    <img class="modal-gift-img" id="modal-img" src="" alt="" loading="lazy">
-                </div>
-                <div class="modal-gift-info">
-                    <h2 class="modal-gift-name" id="modal-name"></h2>
-                    <div class="modal-gift-addr" id="modal-addr"></div>
-                    <div class="modal-ppd" id="modal-ppd-wrap">
-                        <span class="modal-ppd-stars" id="modal-ppd-stars"></span>
-                        <span class="modal-ppd-label" id="modal-ppd-label">/ день</span>
-                    </div>
+    <main class="orders-list" id="orders-list">
+        <div class="gift-skeleton wide"></div>
+        <div class="gift-skeleton wide"></div>
+        <div class="gift-skeleton wide"></div>
+    </main>
+</section>
+
+<!-- ╭─────────────────────────────────────────────────────────╮
+     │  SETTINGS / PROFILE VIEW                                 │
+     ╰─────────────────────────────────────────────────────────╯ -->
+<section class="view hidden" data-view="settings">
+    <header class="r-header simple">
+        <h1 class="r-title">Профіль</h1>
+    </header>
+
+    <main class="settings-list">
+        <div class="settings-card" id="user-card">
+            <div class="settings-avatar" id="user-avatar">?</div>
+            <div class="settings-user-info">
+                <div class="settings-user-name" id="user-name">—</div>
+                <div class="settings-user-uid" id="user-uid">—</div>
+            </div>
+        </div>
+
+        <div class="settings-row">
+            <div class="settings-row-label">TON-гаманець</div>
+            <div class="settings-row-value" id="wallet-status">не підключено</div>
+        </div>
+
+        <button class="settings-btn" id="wallet-action-btn">Підключити гаманець</button>
+
+        <div class="settings-section-title">Про сервіс</div>
+        <div class="settings-row info">
+            <div class="settings-row-label">Мережа</div>
+            <div class="settings-row-value" id="net-info">TON Mainnet</div>
+        </div>
+        <div class="settings-row info">
+            <div class="settings-row-label">Комісія</div>
+            <div class="settings-row-value" id="markup-info">~15%</div>
+        </div>
+
+        <a class="settings-row link" href="index.html">
+            <div class="settings-row-label">Публічна оферта</div>
+            <div class="settings-row-value">›</div>
+        </a>
+    </main>
+</section>
+
+<!-- ╭─────────────────────────────────────────────────────────╮
+     │  BOTTOM NAVIGATION                                       │
+     ╰─────────────────────────────────────────────────────────╯ -->
+<nav class="bottom-nav" role="tablist">
+    <button class="nav-btn active" data-tab="catalog" role="tab">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor"
+             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20 7H4a1 1 0 00-1 1v12a1 1 0 001 1h16a1 1 0 001-1V8a1 1 0 00-1-1z"/>
+            <path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/>
+        </svg>
+        <span>Каталог</span>
+    </button>
+    <button class="nav-btn" data-tab="orders" role="tab">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor"
+             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
+        </svg>
+        <span>Замовлення</span>
+    </button>
+    <button class="nav-btn" data-tab="settings" role="tab">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor"
+             stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="7" r="4"/><path d="M5 21v-1a7 7 0 0114 0v1"/>
+        </svg>
+        <span>Профіль</span>
+    </button>
+</nav>
+
+<!-- ╭─────────────────────────────────────────────────────────╮
+     │  CHECKOUT BOTTOM SHEET                                   │
+     ╰─────────────────────────────────────────────────────────╯ -->
+<div class="modal-overlay" id="rental-modal" hidden role="dialog" aria-modal="true">
+    <div class="modal-sheet">
+        <div class="modal-drag-handle"></div>
+
+        <div class="modal-gift-preview">
+            <div class="modal-img-wrap">
+                <img class="modal-gift-img" id="modal-img" src="" alt="" loading="lazy">
+            </div>
+            <div class="modal-gift-info">
+                <h2 class="modal-gift-name" id="modal-name"></h2>
+                <div class="modal-gift-addr" id="modal-addr"></div>
+                <div class="modal-ppd">
+                    <span class="modal-ppd-stars" id="modal-ppd-stars"></span>
+                    <span class="modal-ppd-label" id="modal-ppd-label">/ день</span>
                 </div>
             </div>
+        </div>
 
-            <div class="modal-divider"></div>
+        <div class="modal-divider"></div>
 
-            <!-- Duration (rent only) -->
-            <div class="duration-section" id="duration-section">
-                <div class="duration-header">
-                    <span class="duration-label">Термін оренди</span>
-                    <span class="duration-value" id="duration-display">7 днів</span>
-                </div>
-                <div class="slider-track-wrap">
-                    <input type="range" class="duration-slider" id="duration-slider" min="1" max="30" value="7" aria-label="Термін оренди в днях">
-                </div>
-                <div class="duration-range-labels">
-                    <span id="duration-min-label">1 день</span>
-                    <span id="duration-max-label">30 днів</span>
+        <div class="duration-section" id="duration-section">
+            <div class="duration-header">
+                <span class="duration-label">Термін оренди</span>
+                <span class="duration-value" id="duration-display">7 днів</span>
+            </div>
+            <div class="slider-track-wrap">
+                <input type="range" class="duration-slider" id="duration-slider" min="1" max="30" value="7"
+                       aria-label="Термін оренди в днях">
+            </div>
+            <div class="duration-range-labels">
+                <span id="duration-min-label">1 день</span>
+                <span id="duration-max-label">30 днів</span>
+            </div>
+        </div>
+
+        <div class="total-section">
+            <div class="total-row">
+                <span class="total-label">Разом</span>
+                <div class="total-amount-col">
+                    <span class="total-stars" id="total-ton"></span>
+                    <span class="total-ton" id="total-stars"></span>
                 </div>
             </div>
-
-            <div class="total-section">
-                <div class="total-row">
-                    <span class="total-label">Разом</span>
-                    <div class="total-amount-col">
-                        <span class="total-stars" id="total-ton"></span>
-                        <span class="total-ton" id="total-stars"></span>
-                    </div>
-                </div>
-                <div class="discount-row" id="discount-row" style="display:none">
-                    <span class="discount-text" id="discount-text"></span>
-                </div>
+            <div class="discount-row" id="discount-row" style="display:none">
+                <span class="discount-text" id="discount-text"></span>
             </div>
+        </div>
 
-            <!-- Payment method -->
-            <div class="method-toggle" id="method-toggle">
-                <button class="method-btn active" data-method="tonconnect">
-                    <span class="method-ic">💎</span> TON (гаманець)
-                </button>
-                <button class="method-btn" data-method="stars">
-                    <span class="method-ic">⭐</span> Telegram Stars
-                </button>
-            </div>
-
-            <button class="rent-btn" id="rent-btn">
-                <span id="rent-btn-text">Орендувати</span>
+        <div class="method-toggle">
+            <button class="method-btn active" data-method="tonconnect">
+                <span class="method-ic">💎</span>TON
             </button>
-
-            <p class="modal-disclaimer" id="modal-disclaimer">
-                Оплата TON-гаманцем: подарунок одразу зараховується на ваш акаунт.
-                Повернення оренди — автоматично після закінчення терміну.
-            </p>
+            <button class="method-btn" data-method="stars">
+                <span class="method-ic">⭐</span>Stars
+            </button>
         </div>
-    </div>
 
-    <!-- Success -->
-    <div class="success-overlay" id="success-screen" style="display:none">
-        <div class="success-content">
-            <div class="success-anim">
-                <svg width="72" height="72" viewBox="0 0 72 72" fill="none">
-                    <circle cx="36" cy="36" r="36" fill="rgba(212,17,21,0.12)"/>
-                    <circle cx="36" cy="36" r="26" fill="rgba(212,17,21,0.2)"/>
-                    <path d="M23 36l9 9 17-18" stroke="#d41115" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-            </div>
-            <h2 class="success-title" id="success-title">Готово!</h2>
-            <p class="success-desc" id="success-desc"></p>
-            <button class="success-btn" id="success-btn">Чудово!</button>
+        <button class="rent-btn" id="rent-btn">
+            <span id="rent-btn-text">Орендувати</span>
+        </button>
+
+        <p class="modal-disclaimer" id="modal-disclaimer">
+            Оплата TON-гаманцем: подарунок одразу зараховується на ваш акаунт.
+        </p>
+    </div>
+</div>
+
+<!-- ╭─────────────────────────────────────────────────────────╮
+     │  SUCCESS OVERLAY                                         │
+     ╰─────────────────────────────────────────────────────────╯ -->
+<div class="success-overlay" id="success-screen" hidden>
+    <div class="success-content">
+        <div class="success-anim">
+            <svg width="80" height="80" viewBox="0 0 80 80" fill="none" aria-hidden="true">
+                <circle cx="40" cy="40" r="40" fill="rgba(212,17,21,0.12)"/>
+                <circle cx="40" cy="40" r="29" fill="rgba(212,17,21,0.22)"/>
+                <path d="M26 40l10 10 19-20" stroke="#d41115" stroke-width="3.6" stroke-linecap="round"
+                      stroke-linejoin="round"/>
+            </svg>
         </div>
+        <h2 class="success-title" id="success-title">Готово!</h2>
+        <p class="success-desc" id="success-desc"></p>
+        <button class="success-btn" id="success-btn">Чудово!</button>
     </div>
+</div>
 
-    <script src="rent.js"></script>
+<!-- Toasts container -->
+<div class="toast-stack" id="toasts" aria-live="polite"></div>
+
+<script src="rent.js"></script>
 </body>
 </html>

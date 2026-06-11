@@ -42,6 +42,12 @@ class RentCheckoutRequest(BaseModel):
     method: str = Field(default="tonconnect", pattern="^(tonconnect|stars)$")
 
 
+class RentExtendRequest(BaseModel):
+    nft_address: str
+    additional_days: int = Field(ge=1, le=365)
+    method: str = Field(default="tonconnect", pattern="^(tonconnect|stars)$")
+
+
 class SaleCheckoutRequest(BaseModel):
     nft_address: str
     method: str = Field(default="tonconnect", pattern="^(tonconnect|stars)$")

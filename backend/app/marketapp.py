@@ -17,6 +17,7 @@ from typing import Any
 import httpx
 
 from .config import settings
+from .retry import with_retry
 
 NANOTON = 1_000_000_000
 SECONDS_PER_DAY = 86_400
@@ -41,11 +42,19 @@ class MarketAppClient:
         await self._client.aclose()
 
     async def _request(self, method: str, path: str, **kwargs) -> Any:
-        resp = await self._client.request(method, path, **kwargs)
+        async def _do() -> httpx.Response:
+            r = await self._client.request(method, path, **kwargs)
+            # Make transient status codes raise so the retry helper sees them.
+            if r.status_code in (429,) or 500 <= r.status_code < 600:
+                r.raise_for_status()
+            return r
+
+        resp = await with_retry(_do, name=f"MRKT {method} {path}")
+
         if resp.status_code >= 400:
             try:
                 detail = resp.json()
-            except Exception:
+            except Exception:  # noqa: BLE001
                 detail = resp.text
             raise MarketAppError(resp.status_code, detail)
         if resp.status_code == 204 or not resp.content:

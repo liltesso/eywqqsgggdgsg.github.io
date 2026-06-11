@@ -1,17 +1,19 @@
 /**
- * Merchant Partners — Gifts Rental & Sale Mini App
+ * Merchant Partners — Gifts Market Mini App
  *
- * Talks ONLY to the bot's backend (window.BACKEND_URL):
- *   GET  /api/rent/gifts        GET  /api/sale/gifts
- *   POST /api/rent/checkout     POST /api/sale/checkout
+ * Three tabs (Каталог / Замовлення / Профіль) wired to a single backend.
+ * Pure ES modules-less code so it runs from any static host (GitHub Pages).
  *
- * Two payment methods:
- *   tonconnect — backend returns an unsigned TON tx; the customer signs it
- *                with their own wallet (TonConnect). Gift lands on their account.
- *   stars      — backend returns a Telegram Stars invoice link.
+ * Endpoints used (all under window.BACKEND_URL):
+ *   GET  /api/rent/gifts                GET  /api/sale/gifts
+ *   POST /api/rent/checkout             POST /api/sale/checkout
+ *   POST /api/rent/extend
+ *   GET  /api/orders                    GET  /api/orders/{id}
+ *   POST /api/orders/{id}/confirm       POST /api/orders/{id}/cancel
+ *   GET  /health
  */
 
-const BACKEND_URL = window.BACKEND_URL || '';
+const BACKEND_URL = (window.BACKEND_URL || '').replace(/\/$/, '');
 const tg = window.Telegram?.WebApp ?? null;
 
 if (tg) {
@@ -19,6 +21,7 @@ if (tg) {
     tg.expand();
     tg.setHeaderColor?.('#0a0a0a');
     tg.setBackgroundColor?.('#0a0a0a');
+    tg.enableClosingConfirmation?.();
 }
 
 // ─── TonConnect ─────────────────────────────────────────────────────────────
@@ -30,6 +33,7 @@ try {
             manifestUrl: window.TONCONNECT_MANIFEST,
             buttonRootId: 'ton-connect',
         });
+        tonConnectUI.onStatusChange?.(refreshWalletUi);
     }
 } catch (e) {
     console.warn('TonConnect init failed:', e);
@@ -38,16 +42,41 @@ try {
 // ─── State ──────────────────────────────────────────────────────────────────
 
 const state = {
-    mode: 'rent',          // 'rent' | 'sale'
+    tab: 'catalog',                  // catalog | orders | settings
+    mode: 'rent',                    // rent | sale
     sort: 'popular',
-    method: 'tonconnect',  // 'tonconnect' | 'stars'
+    method: 'tonconnect',            // tonconnect | stars
+    query: '',
     items: [],
     cursor: null,
     hasMore: false,
     loading: false,
     selected: null,
     duration: 7,
+    ordersKind: '',                  // '' | 'rent' | 'sale'
 };
+
+// ─── DOM helpers ────────────────────────────────────────────────────────────
+
+const $  = (id) => document.getElementById(id);
+const $$ = (sel) => document.querySelectorAll(sel);
+
+function esc(s) {
+    return String(s ?? '').replace(/[&<>"']/g, (c) =>
+        ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
+function pluralDays(n) {
+    n = Math.abs(n);
+    if (n === 1) return 'день';
+    if (n >= 2 && n <= 4) return 'дні';
+    return 'днів';
+}
+
+function truncAddr(a) {
+    if (!a) return '';
+    return a.length > 14 ? `${a.slice(0, 6)}…${a.slice(-4)}` : a;
+}
 
 // ─── API ────────────────────────────────────────────────────────────────────
 
@@ -58,18 +87,48 @@ function authHeaders() {
 }
 
 async function api(path, options = {}) {
+    if (!BACKEND_URL) {
+        throw new Error('BACKEND_URL не задано — додайте window.BACKEND_URL у rent.html');
+    }
     const res = await fetch(`${BACKEND_URL}${path}`, {
         ...options,
         headers: { ...authHeaders(), ...(options.headers || {}) },
     });
+    let body = {};
+    try { body = await res.json(); } catch { /* may be empty */ }
     if (!res.ok) {
-        const body = await res.json().catch(() => ({}));
-        throw new Error(body.detail || `HTTP ${res.status}`);
+        const msg = body?.error?.message || body?.detail || `HTTP ${res.status}`;
+        const err = new Error(msg);
+        err.code = body?.error?.code;
+        err.status = res.status;
+        throw err;
     }
-    return res.json();
+    return body;
 }
 
-// ─── Load catalog ───────────────────────────────────────────────────────────
+// ─── Toasts ─────────────────────────────────────────────────────────────────
+
+function toast(message, kind = 'info', durationMs = 3500) {
+    const ic = { success: '✅', error: '⚠️', info: '💬' }[kind] || '💬';
+    const t = document.createElement('div');
+    t.className = `toast ${kind}`;
+    t.innerHTML = `<span class="toast-ic">${ic}</span><span>${esc(message)}</span>`;
+    $('toasts').appendChild(t);
+    setTimeout(() => {
+        t.style.transition = 'opacity 0.25s, transform 0.25s';
+        t.style.opacity = '0';
+        t.style.transform = 'translateY(10px)';
+        setTimeout(() => t.remove(), 260);
+    }, durationMs);
+}
+
+function notify(msg, kind = 'info') {
+    // Use Telegram's native dialog only for genuine errors that need attention.
+    if (tg && kind === 'error') tg.showAlert(msg);
+    else toast(msg, kind);
+}
+
+// ─── Catalog ────────────────────────────────────────────────────────────────
 
 async function loadItems(reset = false) {
     if (state.loading) return;
@@ -95,41 +154,39 @@ async function loadItems(reset = false) {
         renderError(e.message);
     } finally {
         state.loading = false;
-        el('load-more-container').style.display = state.hasMore ? 'flex' : 'none';
+        $('load-more-container').style.display = state.hasMore ? 'flex' : 'none';
     }
-}
-
-// ─── Rendering ──────────────────────────────────────────────────────────────
-
-const el = (id) => document.getElementById(id);
-
-function esc(s) {
-    return String(s ?? '').replace(/[&<>"]/g, (c) =>
-        ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-}
-
-function pluralDays(n) {
-    n = Math.abs(n);
-    if (n === 1) return 'день';
-    if (n >= 2 && n <= 4) return 'дні';
-    return 'днів';
 }
 
 function renderSkeletons() {
-    el('gifts-grid').innerHTML = Array(6).fill('<div class="gift-skeleton"></div>').join('');
+    $('gifts-grid').innerHTML = Array(6).fill('<div class="gift-skeleton"></div>').join('');
+}
+
+function visibleItems() {
+    const q = state.query.trim().toLowerCase();
+    if (!q) return state.items;
+    return state.items.filter((g) =>
+        (g.name || '').toLowerCase().includes(q) ||
+        (g.nft_address || '').toLowerCase().includes(q));
 }
 
 function renderGrid() {
-    const grid = el('gifts-grid');
-    if (!state.items.length) {
-        grid.innerHTML = stateCell('🎁', 'Нічого не знайдено',
-            state.mode === 'rent' ? 'Немає подарунків для оренди' : 'Немає подарунків у продажу');
+    const grid = $('gifts-grid');
+    const items = visibleItems();
+    if (!items.length) {
+        grid.innerHTML = stateCell(
+            '🎁',
+            state.query ? 'Нічого не знайдено' : 'Каталог поки порожній',
+            state.query ? `За запитом «${esc(state.query)}» немає результатів` : 'Спробуйте інший фільтр',
+        );
         return;
     }
-    grid.innerHTML = state.items.map((g, i) =>
+    grid.innerHTML = items.map((g, i) =>
         state.mode === 'rent' ? rentCard(g, i) : saleCard(g, i)).join('');
-    grid.querySelectorAll('.gift-card').forEach((card, i) =>
-        card.addEventListener('click', () => openModal(state.items[i])));
+    grid.querySelectorAll('.gift-card').forEach((card) => {
+        const idx = +card.dataset.idx;
+        card.addEventListener('click', () => openModal(items[idx]));
+    });
 }
 
 function imgMarkup(g) {
@@ -153,7 +210,7 @@ function rentCard(g, i) {
                         <div class="gift-card-stars">💎 ${g.price_per_day_ton}</div>
                         <div class="gift-card-ppd">TON / день</div>
                     </div>
-                    <div class="gift-card-days-label">⭐ ${g.price_per_day_stars}</div>
+                    <div class="gift-card-days-label">⭐&nbsp;${g.price_per_day_stars}</div>
                 </div>
                 <button class="gift-card-rent-btn" tabindex="-1">Орендувати</button>
             </div>
@@ -172,7 +229,7 @@ function saleCard(g, i) {
                         <div class="gift-card-stars">💎 ${g.price_with_markup}</div>
                         <div class="gift-card-ppd">${esc(cur)}</div>
                     </div>
-                    <div class="gift-card-days-label">⭐ ${g.price_stars}</div>
+                    <div class="gift-card-days-label">⭐&nbsp;${g.price_stars}</div>
                 </div>
                 <button class="gift-card-rent-btn" tabindex="-1">Купити</button>
             </div>
@@ -190,7 +247,7 @@ function stateCell(icon, title, desc, withRetry = false) {
 }
 
 function renderError(msg) {
-    el('gifts-grid').innerHTML = stateCell('⚠️', 'Помилка завантаження', msg || 'Перевірте з\'єднання', true);
+    $('gifts-grid').innerHTML = stateCell('⚠️', 'Помилка завантаження', msg || 'Перевірте з\'єднання', true);
 }
 window.__reload = () => loadItems(true);
 
@@ -200,32 +257,31 @@ function openModal(item) {
     state.selected = item;
     const isRent = state.mode === 'rent';
 
-    el('modal-img').src = item.image_url || '';
-    el('modal-name').textContent = item.name || 'Подарунок';
-    const a = item.nft_address || '';
-    el('modal-addr').textContent = a ? `${a.slice(0, 6)}…${a.slice(-4)}` : '';
+    $('modal-img').src = item.image_url || '';
+    $('modal-name').textContent = item.name || 'Подарунок';
+    $('modal-addr').textContent = truncAddr(item.nft_address);
 
-    el('duration-section').style.display = isRent ? 'block' : 'none';
+    $('duration-section').style.display = isRent ? 'block' : 'none';
 
     if (isRent) {
         state.duration = item.min_duration_days || 1;
-        el('modal-ppd-stars').textContent = `💎 ${item.price_per_day_ton} TON`;
-        el('modal-ppd-label').textContent = '/ день';
-        const sl = el('duration-slider');
+        $('modal-ppd-stars').textContent = `💎 ${item.price_per_day_ton} TON`;
+        $('modal-ppd-label').textContent = '/ день';
+        const sl = $('duration-slider');
         sl.min = item.min_duration_days || 1;
         sl.max = item.max_duration_days || 30;
         sl.value = state.duration;
         updateSliderFill(sl);
-        el('duration-min-label').textContent = `${item.min_duration_days} дн`;
-        el('duration-max-label').textContent = `${item.max_duration_days} дн`;
+        $('duration-min-label').textContent = `${item.min_duration_days} дн`;
+        $('duration-max-label').textContent = `${item.max_duration_days} дн`;
     } else {
-        el('modal-ppd-stars').textContent = `💎 ${item.price_with_markup} ${item.currency || 'TON'}`;
-        el('modal-ppd-label').textContent = 'ціна';
+        $('modal-ppd-stars').textContent = `💎 ${item.price_with_markup} ${item.currency || 'TON'}`;
+        $('modal-ppd-label').textContent = 'ціна';
     }
 
-    el('rent-btn-text').textContent = isRent ? 'Орендувати' : 'Купити';
+    $('rent-btn-text').textContent = isRent ? 'Орендувати' : 'Купити';
     refreshTotals();
-    el('rental-modal').style.display = 'flex';
+    $('rental-modal').hidden = false;
 
     if (tg) {
         tg.HapticFeedback?.impactOccurred('light');
@@ -235,7 +291,7 @@ function openModal(item) {
 }
 
 function closeModal() {
-    el('rental-modal').style.display = 'none';
+    $('rental-modal').hidden = true;
     state.selected = null;
     if (tg) tg.BackButton.hide();
 }
@@ -250,19 +306,19 @@ function refreshTotals() {
         if (days > 1 && g.discount_per_day) total *= (1 - g.discount_per_day);
         total = Math.round(total * 1000) / 1000;
         const stars = g.price_per_day_stars * days;
-        el('duration-display').textContent = `${days} ${pluralDays(days)}`;
-        el('total-ton').textContent = `💎 ${total} TON`;
-        el('total-stars').textContent = `≈ ⭐ ${stars} Stars`;
+        $('duration-display').textContent = `${days} ${pluralDays(days)}`;
+        $('total-ton').textContent = `💎 ${total} TON`;
+        $('total-stars').textContent = `≈ ⭐ ${stars} Stars`;
 
-        const dr = el('discount-row');
+        const dr = $('discount-row');
         if (days > 1 && g.discount_per_day) {
-            el('discount-text').textContent = `🎉 Знижка ${Math.round(g.discount_per_day * 100)}% враховано`;
+            $('discount-text').textContent = `🎉 Знижка ${Math.round(g.discount_per_day * 100)}% враховано`;
             dr.style.display = 'block';
         } else dr.style.display = 'none';
     } else {
-        el('total-ton').textContent = `💎 ${g.price_with_markup} ${g.currency || 'TON'}`;
-        el('total-stars').textContent = `≈ ⭐ ${g.price_stars} Stars`;
-        el('discount-row').style.display = 'none';
+        $('total-ton').textContent = `💎 ${g.price_with_markup} ${g.currency || 'TON'}`;
+        $('total-stars').textContent = `≈ ⭐ ${g.price_stars} Stars`;
+        $('discount-row').style.display = 'none';
     }
 }
 
@@ -279,10 +335,10 @@ async function checkout() {
     const g = state.selected;
     if (!g) return;
 
-    const btn = el('rent-btn');
-    const original = el('rent-btn-text').textContent;
+    const btn = $('rent-btn');
+    const original = $('rent-btn-text').textContent;
     btn.disabled = true;
-    el('rent-btn-text').textContent = 'Обробка…';
+    $('rent-btn-text').textContent = 'Обробка…';
     if (tg) tg.HapticFeedback?.impactOccurred('medium');
 
     try {
@@ -290,7 +346,6 @@ async function checkout() {
         const body = state.mode === 'rent'
             ? { nft_address: g.nft_address, duration_days: state.duration, method: state.method }
             : { nft_address: g.nft_address, method: state.method };
-
         const resp = await api(endpoint, { method: 'POST', body: JSON.stringify(body) });
 
         if (resp.method === 'stars') {
@@ -301,20 +356,20 @@ async function checkout() {
     } catch (e) {
         console.error(e);
         resetBtn(btn, original);
-        notify(e.message || 'Сталася помилка. Спробуйте пізніше.');
+        notify(e.message || 'Сталася помилка', 'error');
     }
 }
 
 async function payWithTon(resp, g, btn, original) {
     if (!tonConnectUI) {
         resetBtn(btn, original);
-        notify('Підключіть TON-гаманець (кнопка зверху), щоб оплатити.');
+        notify('Підключіть TON-гаманець', 'error');
         return;
     }
     if (!tonConnectUI.connected) {
         resetBtn(btn, original);
         await tonConnectUI.openModal();
-        notify('Підключіть гаманець і повторіть оплату.');
+        notify('Підключіть гаманець і повторіть оплату');
         return;
     }
     let result;
@@ -330,13 +385,11 @@ async function payWithTon(resp, g, btn, original) {
         });
     } catch (e) {
         resetBtn(btn, original);
-        if (!/reject|cancel/i.test(e?.message || '')) notify('Транзакцію не підтверджено.');
+        if (!/reject|cancel/i.test(e?.message || '')) notify('Транзакцію не підтверджено', 'error');
         return;
     }
 
-    // The wallet has SENT the tx — but it isn't settled yet. Hand the signed
-    // BOC + wallet to the backend and poll until it's verified on-chain.
-    el('rent-btn-text').textContent = 'Підтвердження в мережі…';
+    $('rent-btn-text').textContent = 'Підтвердження в мережі…';
     const wallet = tonConnectUI.account?.address || null;
     try {
         await api(`/api/orders/${resp.order_id}/confirm`, {
@@ -352,123 +405,255 @@ async function payWithTon(resp, g, btn, original) {
         showSuccess(g);
     } else {
         resetBtn(btn, original);
-        notify('Оплату надіслано. Підтвердження в мережі ще триває — статус оновиться згодом.');
+        notify('Транзакцію надіслано. Підтвердження в мережі ще триває — дивіться «Замовлення».', 'info');
     }
 }
 
-/** Poll order status until it reaches a terminal state (or timeout). */
-async function pollOrder(orderId, { tries = 40, intervalMs = 3000 } = {}) {
+async function payWithStars(resp, g, btn, original) {
+    if (tg && resp.invoice_link) {
+        tg.openInvoice(resp.invoice_link, async (status) => {
+            if (status === 'paid') {
+                $('rent-btn-text').textContent = 'Видача…';
+                const ok = await pollOrder(resp.order_id);
+                if (ok) {
+                    closeModal();
+                    showSuccess(g);
+                } else {
+                    resetBtn(btn, original);
+                    notify('Оплату отримано — видача обробляється', 'info');
+                }
+            } else {
+                resetBtn(btn, original);
+                if (status !== 'cancelled') notify('Оплата не пройшла', 'error');
+            }
+        });
+    } else {
+        resetBtn(btn, original);
+        notify('Stars-оплата доступна лише всередині Telegram', 'error');
+    }
+}
+
+async function pollOrder(orderId, { tries = 30, intervalMs = 3000 } = {}) {
     for (let i = 0; i < tries; i++) {
         try {
             const s = await api(`/api/orders/${orderId}`);
             if (s.status === 'fulfilled') return true;
             if (s.status === 'failed' || s.status === 'expired') return false;
-        } catch (e) {
-            // transient — keep polling
-        }
+        } catch { /* transient — keep polling */ }
         await new Promise((r) => setTimeout(r, intervalMs));
     }
     return false;
 }
 
-async function payWithStars(resp, g, btn, original) {
-    if (tg && resp.invoice_link) {
-        tg.openInvoice(resp.invoice_link, (status) => {
-            if (status === 'paid') {
-                closeModal();
-                showSuccess(g);
-            } else {
-                resetBtn(btn, original);
-                if (status !== 'cancelled') notify('Оплата не пройшла.');
-            }
-        });
-    } else {
-        resetBtn(btn, original);
-        notify('Stars-оплата доступна лише всередині Telegram.');
-    }
-}
-
 function resetBtn(btn, text) {
     btn.disabled = false;
-    el('rent-btn-text').textContent = text;
+    $('rent-btn-text').textContent = text;
 }
-
-function notify(msg) {
-    if (tg) tg.showAlert(msg);
-    else alert(msg);
-}
-
-// ─── Success ────────────────────────────────────────────────────────────────
 
 function showSuccess(g) {
     const isRent = state.mode === 'rent';
-    el('success-title').textContent = isRent ? 'Оренду оформлено!' : 'Покупку оформлено!';
-    el('success-desc').textContent = isRent
+    $('success-title').textContent = isRent ? 'Оренду оформлено!' : 'Покупку оформлено!';
+    $('success-desc').textContent = isRent
         ? `"${g.name}" орендовано на ${state.duration} ${pluralDays(state.duration)}. Подарунок вже на вашому акаунті!`
         : `"${g.name}" придбано. Подарунок зараховано на ваш акаунт!`;
-    el('success-screen').style.display = 'flex';
+    $('success-screen').hidden = false;
     if (tg) { tg.HapticFeedback?.notificationOccurred('success'); tg.BackButton.hide(); }
 }
 
 function closeSuccess() {
-    el('success-screen').style.display = 'none';
+    $('success-screen').hidden = true;
     loadItems(true);
 }
 
-// ─── Mode / sort switching ──────────────────────────────────────────────────
+// ─── Orders view ────────────────────────────────────────────────────────────
+
+const STATUS_LABEL = {
+    created: 'створено',
+    awaiting_signature: 'очікує підпису',
+    invoiced: 'очікує оплати',
+    submitted: 'надіслано',
+    confirming: 'підтвердження',
+    paid: 'оплачено',
+    fulfilled: 'виконано',
+    paid_unfulfilled: 'оплачено · видача вручну',
+    failed: 'скасовано',
+    expired: 'термін минув',
+};
+
+async function loadOrders() {
+    const list = $('orders-list');
+    list.innerHTML = '<div class="gift-skeleton wide"></div><div class="gift-skeleton wide"></div><div class="gift-skeleton wide"></div>';
+    try {
+        const qs = state.ordersKind ? `?kind=${state.ordersKind}` : '';
+        const orders = await api(`/api/orders${qs}`);
+        if (!orders.length) {
+            list.innerHTML = stateCell('📭', 'Поки немає замовлень', 'Замовляйте подарунки в «Каталозі»');
+            return;
+        }
+        list.innerHTML = orders.map(orderCard).join('');
+        list.querySelectorAll('.order-cancel-btn').forEach((b) => {
+            b.addEventListener('click', () => cancelOrder(+b.dataset.id));
+        });
+    } catch (e) {
+        list.innerHTML = stateCell('⚠️', 'Помилка', e.message, false);
+    }
+}
+
+function orderCard(o) {
+    const dur = o.kind === 'rent' && o.duration_days ? ` · ${o.duration_days} ${pluralDays(o.duration_days)}` : '';
+    const cancelBtn = o.can_cancel
+        ? `<button class="order-cancel-btn" data-id="${o.order_id}">скасувати</button>`
+        : '';
+    return `
+        <div class="order-card">
+            <div class="order-img">${o.kind === 'rent' ? '🎁' : '🛒'}</div>
+            <div class="order-info">
+                <div class="order-name">${esc(o.nft_name || 'Подарунок')}</div>
+                <div class="order-meta">${esc(o.kind === 'rent' ? 'Оренда' : 'Купівля')}${dur} · ${esc(truncAddr(o.nft_address))}</div>
+                <div class="order-bottom">
+                    <span class="badge badge-${o.status}">${STATUS_LABEL[o.status] || o.status}</span>
+                    <div style="display:flex;align-items:center;">
+                        <span class="order-price">${o.our_price} ${o.currency === 'XTR' ? '⭐' : o.currency}</span>
+                        ${cancelBtn}
+                    </div>
+                </div>
+            </div>
+        </div>`;
+}
+
+async function cancelOrder(id) {
+    try {
+        await api(`/api/orders/${id}/cancel`, { method: 'POST' });
+        notify('Замовлення скасовано', 'success');
+        loadOrders();
+    } catch (e) {
+        notify(e.message, 'error');
+    }
+}
+
+// ─── Settings view ──────────────────────────────────────────────────────────
+
+async function loadSettings() {
+    const user = tg?.initDataUnsafe?.user;
+    if (user) {
+        $('user-name').textContent = user.first_name + (user.last_name ? ` ${user.last_name}` : '');
+        $('user-uid').textContent = user.username ? `@${user.username}` : `id ${user.id}`;
+        $('user-avatar').textContent = (user.first_name || '?').charAt(0).toUpperCase();
+    }
+    refreshWalletUi();
+
+    try {
+        const h = await api('/health');
+        $('net-info').textContent = h.network === 'testnet' ? 'TON Testnet' : 'TON Mainnet';
+        $('markup-info').textContent = `~${h.markup_percent}%`;
+    } catch { /* ignore */ }
+}
+
+function refreshWalletUi() {
+    const btn = $('wallet-action-btn');
+    const status = $('wallet-status');
+    if (tonConnectUI?.connected) {
+        const addr = tonConnectUI.account?.address;
+        status.textContent = truncAddr(addr);
+        status.style.color = 'var(--green)';
+        btn.textContent = 'Від\'єднати гаманець';
+        btn.classList.add('disconnect');
+    } else {
+        status.textContent = 'не підключено';
+        status.style.color = '';
+        btn.textContent = 'Підключити гаманець';
+        btn.classList.remove('disconnect');
+    }
+}
+
+async function toggleWallet() {
+    if (!tonConnectUI) return notify('TonConnect недоступний', 'error');
+    if (tonConnectUI.connected) await tonConnectUI.disconnect();
+    else                       await tonConnectUI.openModal();
+}
+
+// ─── Tabs ──────────────────────────────────────────────────────────────────
+
+function setTab(tab) {
+    state.tab = tab;
+    document.body.dataset.tab = tab;
+    $$('.view').forEach((v) => v.classList.toggle('hidden', v.dataset.view !== tab));
+    $$('.nav-btn').forEach((b) => b.classList.toggle('active', b.dataset.tab === tab));
+
+    if (tab === 'orders') loadOrders();
+    else if (tab === 'settings') loadSettings();
+    if (tg) tg.HapticFeedback?.selectionChanged();
+}
 
 function setMode(mode) {
     state.mode = mode;
     state.sort = mode === 'rent' ? 'popular' : 'price_asc';
-    document.querySelectorAll('.r-tab').forEach((t) =>
-        t.classList.toggle('active', t.dataset.mode === mode));
-    document.querySelectorAll('.rent-only').forEach((e) =>
-        e.style.display = mode === 'rent' ? '' : 'none');
-    document.querySelectorAll('.filter-chip').forEach((c) =>
-        c.classList.toggle('active', c.dataset.sort === state.sort));
+    $$('.r-tabs [data-mode]').forEach((t) => t.classList.toggle('active', t.dataset.mode === mode));
+    $$('.rent-only').forEach((e) => e.style.display = mode === 'rent' ? '' : 'none');
+    $$('.filter-chip').forEach((c) => c.classList.toggle('active', c.dataset.sort === state.sort));
     loadItems(true);
 }
 
 // ─── Wire up ────────────────────────────────────────────────────────────────
 
-el('rental-modal').addEventListener('click', (e) => {
-    if (e.target === el('rental-modal')) closeModal();
+$('rental-modal').addEventListener('click', (e) => {
+    if (e.target === $('rental-modal')) closeModal();
 });
 
-el('duration-slider').addEventListener('input', (e) => {
+$('duration-slider').addEventListener('input', (e) => {
     state.duration = parseInt(e.target.value, 10);
     updateSliderFill(e.target);
     refreshTotals();
     if (tg) tg.HapticFeedback?.selectionChanged();
 });
 
-el('rent-btn').addEventListener('click', checkout);
-el('success-btn').addEventListener('click', closeSuccess);
-el('load-more-btn').addEventListener('click', () => loadItems(false));
+$('rent-btn').addEventListener('click', checkout);
+$('success-btn').addEventListener('click', closeSuccess);
+$('load-more-btn').addEventListener('click', () => loadItems(false));
+$('wallet-action-btn').addEventListener('click', toggleWallet);
 
-document.querySelectorAll('.r-tab').forEach((t) =>
-    t.addEventListener('click', () => { setMode(t.dataset.mode); if (tg) tg.HapticFeedback?.selectionChanged(); }));
+$$('.r-tabs [data-mode]').forEach((t) =>
+    t.addEventListener('click', () => setMode(t.dataset.mode)));
 
-document.querySelectorAll('.filter-chip').forEach((chip) =>
+$$('.filter-chip').forEach((chip) =>
     chip.addEventListener('click', () => {
-        document.querySelectorAll('.filter-chip').forEach((c) => c.classList.remove('active'));
+        $$('.filter-chip').forEach((c) => c.classList.remove('active'));
         chip.classList.add('active');
         state.sort = chip.dataset.sort;
         loadItems(true);
         if (tg) tg.HapticFeedback?.selectionChanged();
     }));
 
-document.querySelectorAll('.method-btn').forEach((b) =>
+$$('.method-btn').forEach((b) =>
     b.addEventListener('click', () => {
-        document.querySelectorAll('.method-btn').forEach((x) => x.classList.remove('active'));
+        $$('.method-btn').forEach((x) => x.classList.remove('active'));
         b.classList.add('active');
         state.method = b.dataset.method;
-        const d = el('modal-disclaimer');
-        d.textContent = state.method === 'tonconnect'
+        $('modal-disclaimer').textContent = state.method === 'tonconnect'
             ? 'Оплата TON-гаманцем: подарунок одразу зараховується на ваш акаунт.'
             : 'Оплата Telegram Stars: видача обробляється сервісом після оплати.';
         if (tg) tg.HapticFeedback?.selectionChanged();
     }));
+
+$$('.nav-btn').forEach((b) =>
+    b.addEventListener('click', () => setTab(b.dataset.tab)));
+
+$$('#orders-filter [data-kind]').forEach((t) =>
+    t.addEventListener('click', () => {
+        $$('#orders-filter .r-tab').forEach((x) => x.classList.remove('active'));
+        t.classList.add('active');
+        state.ordersKind = t.dataset.kind;
+        loadOrders();
+    }));
+
+let searchTimer;
+$('search-input').addEventListener('input', (e) => {
+    clearTimeout(searchTimer);
+    searchTimer = setTimeout(() => {
+        state.query = e.target.value;
+        renderGrid();
+    }, 150);
+});
 
 // ─── Init ───────────────────────────────────────────────────────────────────
 

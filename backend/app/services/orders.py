@@ -101,3 +101,40 @@ async def pending_confirmations(db: AsyncSession, limit: int = 50) -> list[Trans
         .limit(limit)
     )
     return list(res.scalars().all())
+
+
+async def list_user_orders(
+    db: AsyncSession, user_id: int, *, limit: int = 30, kind: str | None = None
+) -> list[Transaction]:
+    stmt = select(Transaction).where(Transaction.user_id == user_id)
+    if kind in ("rent", "sale"):
+        stmt = stmt.where(Transaction.kind == kind)
+    stmt = stmt.order_by(Transaction.created_at.desc()).limit(limit)
+    res = await db.execute(stmt)
+    return list(res.scalars().all())
+
+
+async def cancel_order(db: AsyncSession, order: Transaction) -> Transaction:
+    """Mark a pre-payment order as failed. Idempotent.
+
+    Only orders that haven't been submitted on-chain or paid in Stars can be
+    cancelled; everything else needs the on-chain or refund flow.
+    """
+    if order.status in (
+        OrderStatus.CREATED.value,
+        OrderStatus.AWAITING_SIGNATURE.value,
+        OrderStatus.INVOICED.value,
+    ):
+        order.set_status(OrderStatus.FAILED)
+        order.confirm_reason = "cancelled_by_user"
+        await db.commit()
+        await db.refresh(order)
+    return order
+
+
+def can_cancel(order: Transaction) -> bool:
+    return order.status in (
+        OrderStatus.CREATED.value,
+        OrderStatus.AWAITING_SIGNATURE.value,
+        OrderStatus.INVOICED.value,
+    )
