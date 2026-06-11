@@ -36,7 +36,18 @@ class Settings(BaseSettings):
 
     # Optional treasury / TON signing path
     wallet_mnemonic: str = ""
+
+    # TON blockchain / TonAPI (on-chain verification)
     tonapi_key: str = ""
+    tonapi_base_url: str = "https://tonapi.io"
+    testnet: bool = False
+    # USDT jetton master (mainnet). Used for jetton-priced sales.
+    usdt_jetton_master: str = "EQCxE6mUtQJKFnGfaROTKOt1lZbDiiX1kCixRv7Nw2Id_sDs"
+
+    # Order confirmation worker
+    confirm_poll_interval: int = 6        # seconds between confirmation sweeps
+    confirm_timeout: int = 600            # seconds before a pending order expires
+    enable_confirmation_worker: bool = True
 
     @property
     def cors_origin_list(self) -> list[str]:

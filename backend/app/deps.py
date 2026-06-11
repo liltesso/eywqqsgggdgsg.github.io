@@ -16,6 +16,11 @@ def get_marketapp(request: Request) -> MarketAppClient:
     return request.app.state.marketapp
 
 
+def get_tonapi(request: Request):
+    """Shared TonAPI client created in the app lifespan."""
+    return request.app.state.tonapi
+
+
 async def get_current_user(
     x_telegram_init_data: str | None = Header(default=None),
     db: AsyncSession = Depends(get_db),

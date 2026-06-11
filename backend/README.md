@@ -36,26 +36,47 @@ lost silently.
 ```
 backend/
 ├── app/
-│   ├── main.py            FastAPI app + lifespan
+│   ├── main.py            FastAPI app + lifespan (clients + worker)
 │   ├── config.py          env settings
 │   ├── database.py        async SQLAlchemy
-│   ├── models.py          User, Transaction
+│   ├── models.py          User, Transaction, OrderStatus (state machine)
 │   ├── schemas.py         request/response models
 │   ├── marketapp.py       ★ ALL MRKT calls live here (Repository pattern)
 │   ├── pricing.py         markup, TON↔Stars, markup message
 │   ├── cache.py           TTL catalog cache (anti rate-limit)
 │   ├── telegram.py        initData validation + Bot API
-│   ├── ton.py             OPTIONAL treasury signing (Stars path)
-│   ├── deps.py            auth + shared deps
+│   ├── deps.py            auth + shared deps (MRKT, TonAPI)
+│   ├── blockchain/        ★ ALL TON calls live here
+│   │   ├── units.py       nanoton / jetton conversions (integer money)
+│   │   ├── address.py     raw ↔ user-friendly codec + CRC16
+│   │   ├── tonapi.py      async TonAPI REST client
+│   │   ├── verifier.py    on-chain payment & NFT-ownership checks
+│   │   └── wallet.py      OPTIONAL treasury signing (Stars path)
+│   ├── services/
+│   │   ├── orders.py      order state machine (idempotent)
+│   │   └── confirmation.py  background on-chain confirmation worker
 │   └── routers/
 │       ├── catalog.py     GET /api/rent/gifts, /api/sale/gifts
 │       ├── checkout.py    POST /api/rent/checkout, /api/sale/checkout
+│       ├── orders.py      GET /api/orders/{id}, POST /api/orders/{id}/confirm
 │       └── webhook.py     POST /api/telegram/webhook (/start, payments)
+├── tests/                 pytest: units, address, pricing, verifier
+├── docs/BLOCKCHAIN.md     ★ deep dive on the TON layer
 └── bot.py                 one-shot: set webhook + menu button
 ```
 
-> **Repository pattern:** if MRKT changes its API, you edit only
-> `app/marketapp.py`. Routers, pricing, bot and the Mini App stay untouched.
+> **Two isolated integration layers.** If MarketApp changes its API you edit
+> only `app/marketapp.py`; if TON tooling changes you edit only
+> `app/blockchain/`. Routers, pricing, services and the Mini App stay untouched.
+
+### Honest payments: confirm + poll
+
+The TonConnect callback fires when the wallet *sends* a transaction, not when it
+*settles*. So checkout returns an `order_id`; the client confirms
+(`POST /api/orders/{id}/confirm`) and then polls (`GET /api/orders/{id}`). A
+background worker verifies the payment **on-chain via TonAPI** (the NFT now
+belongs to the customer; the markup reached your wallet) and only then flips the
+order to `fulfilled`. See [`docs/BLOCKCHAIN.md`](./docs/BLOCKCHAIN.md).
 
 ## API surface (what the Mini App calls)
 
@@ -63,13 +84,23 @@ backend/
 |---|---|---|
 | GET  | `/api/rent/gifts?sort=&cursor=` | rentable gifts (marked-up) |
 | GET  | `/api/sale/gifts?sort=&cursor=` | gifts on sale (marked-up) |
-| POST | `/api/rent/checkout` | `{nft_address, duration_days, method}` |
-| POST | `/api/sale/checkout` | `{nft_address, method}` |
+| POST | `/api/rent/checkout` | `{nft_address, duration_days, method}` → order + tx/invoice |
+| POST | `/api/sale/checkout` | `{nft_address, method}` → order + tx/invoice |
+| POST | `/api/orders/{id}/confirm` | `{boc, wallet_address}` — client submits signed tx |
+| GET  | `/api/orders/{id}` | order status (poll until `fulfilled`) |
 | POST | `/api/telegram/webhook` | Telegram updates (auth via secret header) |
 | GET  | `/health` | config / liveness |
 
 Checkout returns either a TonConnect transaction (`method: "tonconnect"`) or a
 Stars invoice link (`method: "stars"`).
+
+## Tests
+
+```bash
+cd backend
+pip install -r requirements.txt pytest
+python -m pytest -q
+```
 
 ## Setup
 

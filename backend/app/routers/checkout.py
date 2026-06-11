@@ -25,7 +25,8 @@ from ..marketapp import (
     MarketAppError,
     normalize_rent_item,
 )
-from ..models import Transaction, User
+from ..blockchain.units import ton_to_nano
+from ..models import OrderStatus, Transaction, User
 from ..pricing import apply_markup, markup_message, rent_total, ton_to_stars
 from ..schemas import (
     RentCheckoutRequest,
@@ -69,17 +70,19 @@ async def rent_checkout(
     customer_total, markup = apply_markup(provider_total)
 
     payload = uuid.uuid4().hex
+    is_ton = req.method == "tonconnect"
     order = Transaction(
         user_id=user.id,
         kind="rent",
         nft_address=req.nft_address,
         nft_name=gift["name"],
         duration_days=days,
-        currency="TON" if req.method == "tonconnect" else "XTR",
+        currency="TON" if is_ton else "XTR",
         provider_price=provider_total,
         markup=markup,
         our_price=customer_total,
-        status="pending",
+        markup_nano=ton_to_nano(markup) if is_ton else 0,
+        status=(OrderStatus.AWAITING_SIGNATURE if is_ton else OrderStatus.INVOICED).value,
         payment_method=req.method,
         invoice_payload=payload,
     )
@@ -136,16 +139,18 @@ async def sale_checkout(
     currency = gift["currency"]
 
     payload = uuid.uuid4().hex
+    is_ton = req.method == "tonconnect"
     order = Transaction(
         user_id=user.id,
         kind="sale",
         nft_address=req.nft_address,
         nft_name=gift["name"],
-        currency=currency if req.method == "tonconnect" else "XTR",
+        currency=currency if is_ton else "XTR",
         provider_price=provider_price,
         markup=markup,
         our_price=customer_price,
-        status="pending",
+        markup_nano=ton_to_nano(markup) if (is_ton and currency == "TON") else 0,
+        status=(OrderStatus.AWAITING_SIGNATURE if is_ton else OrderStatus.INVOICED).value,
         payment_method=req.method,
         invoice_payload=payload,
     )

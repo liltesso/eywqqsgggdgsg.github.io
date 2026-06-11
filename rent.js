@@ -317,8 +317,9 @@ async function payWithTon(resp, g, btn, original) {
         notify('Підключіть гаманець і повторіть оплату.');
         return;
     }
+    let result;
     try {
-        await tonConnectUI.sendTransaction({
+        result = await tonConnectUI.sendTransaction({
             validUntil: resp.transaction.valid_until || Math.floor(Date.now() / 1000) + 300,
             messages: resp.transaction.messages.map((m) => ({
                 address: m.address,
@@ -327,12 +328,47 @@ async function payWithTon(resp, g, btn, original) {
                 stateInit: m.stateInit || undefined,
             })),
         });
-        closeModal();
-        showSuccess(g);
     } catch (e) {
         resetBtn(btn, original);
         if (!/reject|cancel/i.test(e?.message || '')) notify('Транзакцію не підтверджено.');
+        return;
     }
+
+    // The wallet has SENT the tx — but it isn't settled yet. Hand the signed
+    // BOC + wallet to the backend and poll until it's verified on-chain.
+    el('rent-btn-text').textContent = 'Підтвердження в мережі…';
+    const wallet = tonConnectUI.account?.address || null;
+    try {
+        await api(`/api/orders/${resp.order_id}/confirm`, {
+            method: 'POST',
+            body: JSON.stringify({ boc: result?.boc || null, wallet_address: wallet }),
+        });
+    } catch (e) {
+        console.warn('confirm submit failed, will still poll:', e);
+    }
+    const ok = await pollOrder(resp.order_id);
+    if (ok) {
+        closeModal();
+        showSuccess(g);
+    } else {
+        resetBtn(btn, original);
+        notify('Оплату надіслано. Підтвердження в мережі ще триває — статус оновиться згодом.');
+    }
+}
+
+/** Poll order status until it reaches a terminal state (or timeout). */
+async function pollOrder(orderId, { tries = 40, intervalMs = 3000 } = {}) {
+    for (let i = 0; i < tries; i++) {
+        try {
+            const s = await api(`/api/orders/${orderId}`);
+            if (s.status === 'fulfilled') return true;
+            if (s.status === 'failed' || s.status === 'expired') return false;
+        } catch (e) {
+            // transient — keep polling
+        }
+        await new Promise((r) => setTimeout(r, intervalMs));
+    }
+    return false;
 }
 
 async function payWithStars(resp, g, btn, original) {

@@ -18,3 +18,6 @@ aiosqlite==0.20.0
 # ─── TON wallet signing (ONLY needed for the Stars/treasury path) ─
 # The default TonConnect flow does NOT require these.
 # tonutils==0.3.5
+
+# ─── Dev / tests ─────────────────────────────────────────────────
+# pytest==8.3.4

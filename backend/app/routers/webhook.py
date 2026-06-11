@@ -1,22 +1,22 @@
 """Telegram webhook: pre-checkout approval + Stars payment fulfilment.
 
 For the Stars path, fulfilment means signing & broadcasting the MRKT
-transaction from the treasury wallet (see app/ton.py). That requires custody
-and TON funds; if the treasury isn't configured the order is marked
-`paid_unfulfilled` and flagged for manual handling, so no money is lost
+transaction from the treasury wallet (see app/blockchain/wallet.py). That
+requires custody and TON funds; if the treasury isn't configured the order is
+marked `paid_unfulfilled` and flagged for manual handling, so no money is lost
 silently.
 """
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Request
-from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from ..config import settings
 from ..database import get_db
 from ..deps import get_marketapp
 from ..marketapp import SECONDS_PER_DAY, MarketAppClient
-from ..models import Transaction
+from ..models import OrderStatus, Transaction
+from ..services.orders import get_order_by_payload
 from ..telegram import answer_pre_checkout, send_message, send_webapp_button
 
 router = APIRouter(prefix="/api", tags=["webhook"])
@@ -41,8 +41,8 @@ async def telegram_webhook(
     # 1. Pre-checkout: approve quickly (Telegram requires a reply <10s).
     if pre := update.get("pre_checkout_query"):
         payload = pre.get("invoice_payload")
-        order = await _order_by_payload(db, payload)
-        ok = order is not None and order.status == "pending"
+        order = await get_order_by_payload(db, payload)
+        ok = order is not None and order.status == OrderStatus.INVOICED.value
         await answer_pre_checkout(pre["id"], ok=ok, error="" if ok else "Order expired")
         return {"ok": True}
 
@@ -61,9 +61,9 @@ async def telegram_webhook(
     # 3. Successful payment.
     if sp := message.get("successful_payment"):
         payload = sp.get("invoice_payload")
-        order = await _order_by_payload(db, payload)
-        if order and order.status == "pending":
-            order.status = "paid"
+        order = await get_order_by_payload(db, payload)
+        if order and order.status == OrderStatus.INVOICED.value:
+            order.set_status(OrderStatus.PAID)
             await db.commit()
             await _fulfil_stars_order(db, mrkt, order, chat_id=message["chat"]["id"])
         return {"ok": True}
@@ -71,25 +71,18 @@ async def telegram_webhook(
     return {"ok": True}
 
 
-async def _order_by_payload(db: AsyncSession, payload: str | None) -> Transaction | None:
-    if not payload:
-        return None
-    res = await db.execute(select(Transaction).where(Transaction.invoice_payload == payload))
-    return res.scalar_one_or_none()
-
-
 async def _fulfil_stars_order(
     db: AsyncSession, mrkt: MarketAppClient, order: Transaction, *, chat_id: int
 ) -> None:
     """Execute the MRKT action for a Stars-paid order via the treasury wallet."""
     try:
-        from ..ton import treasury_available, sign_and_send
-    except Exception:
+        from ..blockchain.wallet import sign_and_send, treasury_available
+    except Exception:  # noqa: BLE001
         treasury_available = lambda: False  # noqa: E731
         sign_and_send = None
 
     if not treasury_available():
-        order.status = "paid_unfulfilled"
+        order.set_status(OrderStatus.PAID_UNFULFILLED)
         await db.commit()
         await send_message(
             chat_id,
@@ -112,7 +105,7 @@ async def _fulfil_stars_order(
         )
 
     tx_hash = await sign_and_send(sendtx)
-    order.status = "fulfilled"
+    order.set_status(OrderStatus.FULFILLED)
     order.tx_hash = tx_hash
     await db.commit()
     await send_message(chat_id, "🎉 Готово! Подарунок видано. Перевірте свій гаманець / Telegram.")
