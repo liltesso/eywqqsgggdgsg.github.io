@@ -13,8 +13,15 @@
  *   GET  /health
  */
 
-const BACKEND_URL = (window.BACKEND_URL || '').replace(/\/$/, '');
+const BACKEND_URL      = (window.BACKEND_URL || '').replace(/\/$/, '');
+const TON_TO_UAH       = window.TON_TO_UAH || 180;
+const MERCHANT_WALLET  = window.MERCHANT_WALLET || '';
 const tg = window.Telegram?.WebApp ?? null;
+
+function tonToUah(ton) {
+    const uah = Math.round(parseFloat(ton || 0) * TON_TO_UAH);
+    return uah.toLocaleString('uk-UA') + ' ₴';
+}
 
 if (tg) {
     tg.ready();
@@ -197,42 +204,42 @@ function imgMarkup(g) {
 }
 
 function rentCard(g, i) {
+    const uahPerDay = tonToUah(g.price_per_day_ton);
     return `
         <div class="gift-card" data-idx="${i}" role="button" tabindex="0">
             <div class="gift-card-img-wrap">
                 ${imgMarkup(g)}
+                <div class="gift-card-img-overlay"></div>
                 <div class="gift-card-days-badge">${g.min_duration_days}–${g.max_duration_days}д</div>
-            </div>
-            <div class="gift-card-body">
-                <div class="gift-card-name">${esc(g.name)}</div>
-                <div class="gift-card-footer">
-                    <div class="gift-card-price-block">
-                        <div class="gift-card-stars">💎 ${g.price_per_day_ton}</div>
-                        <div class="gift-card-ppd">TON / день</div>
+                <div class="gift-card-over">
+                    <div class="gift-card-name">${esc(g.name)}</div>
+                    <div class="gift-card-price-row">
+                        <span class="gift-card-ton">💎 ${g.price_per_day_ton} <span style="font-size:9px;opacity:0.75">TON/д</span></span>
+                        <span class="gift-card-uah">${uahPerDay}/д</span>
                     </div>
-                    <div class="gift-card-days-label">⭐&nbsp;${g.price_per_day_stars}</div>
                 </div>
-                <button class="gift-card-rent-btn" tabindex="-1">Орендувати</button>
             </div>
+            <button class="gift-card-rent-btn" tabindex="-1">Орендувати</button>
         </div>`;
 }
 
 function saleCard(g, i) {
     const cur = g.currency || 'TON';
+    const uah = tonToUah(g.price_with_markup);
     return `
         <div class="gift-card" data-idx="${i}" role="button" tabindex="0">
-            <div class="gift-card-img-wrap">${imgMarkup(g)}</div>
-            <div class="gift-card-body">
-                <div class="gift-card-name">${esc(g.name)}</div>
-                <div class="gift-card-footer">
-                    <div class="gift-card-price-block">
-                        <div class="gift-card-stars">💎 ${g.price_with_markup}</div>
-                        <div class="gift-card-ppd">${esc(cur)}</div>
+            <div class="gift-card-img-wrap">
+                ${imgMarkup(g)}
+                <div class="gift-card-img-overlay"></div>
+                <div class="gift-card-over">
+                    <div class="gift-card-name">${esc(g.name)}</div>
+                    <div class="gift-card-price-row">
+                        <span class="gift-card-ton">💎 ${g.price_with_markup} <span style="font-size:9px;opacity:0.75">${esc(cur)}</span></span>
+                        <span class="gift-card-uah">${uah}</span>
                     </div>
-                    <div class="gift-card-days-label">⭐&nbsp;${g.price_stars}</div>
                 </div>
-                <button class="gift-card-rent-btn" tabindex="-1">Купити</button>
             </div>
+            <button class="gift-card-rent-btn" tabindex="-1">Купити</button>
         </div>`;
 }
 
@@ -308,7 +315,7 @@ function refreshTotals() {
         const stars = g.price_per_day_stars * days;
         $('duration-display').textContent = `${days} ${pluralDays(days)}`;
         $('total-ton').textContent = `💎 ${total} TON`;
-        $('total-stars').textContent = `≈ ⭐ ${stars} Stars`;
+        $('total-stars').textContent = `≈ ${tonToUah(total)}`;
 
         const dr = $('discount-row');
         if (days > 1 && g.discount_per_day) {
@@ -317,7 +324,7 @@ function refreshTotals() {
         } else dr.style.display = 'none';
     } else {
         $('total-ton').textContent = `💎 ${g.price_with_markup} ${g.currency || 'TON'}`;
-        $('total-stars').textContent = `≈ ⭐ ${g.price_stars} Stars`;
+        $('total-stars').textContent = `≈ ${tonToUah(g.price_with_markup)}`;
         $('discount-row').style.display = 'none';
     }
 }
@@ -360,18 +367,30 @@ async function checkout() {
     }
 }
 
+function showTopupHint(show) {
+    const hint = $('topup-hint');
+    if (!hint) return;
+    hint.style.display = show ? 'block' : 'none';
+    if (show && MERCHANT_WALLET) {
+        $('topup-addr').textContent = MERCHANT_WALLET;
+    }
+}
+
 async function payWithTon(resp, g, btn, original) {
     if (!tonConnectUI) {
         resetBtn(btn, original);
+        showTopupHint(true);
         notify('Підключіть TON-гаманець', 'error');
         return;
     }
     if (!tonConnectUI.connected) {
         resetBtn(btn, original);
+        showTopupHint(true);
         await tonConnectUI.openModal();
         notify('Підключіть гаманець і повторіть оплату');
         return;
     }
+    showTopupHint(false);
     let result;
     try {
         result = await tonConnectUI.sendTransaction({
@@ -611,6 +630,20 @@ $('rent-btn').addEventListener('click', checkout);
 $('success-btn').addEventListener('click', closeSuccess);
 $('load-more-btn').addEventListener('click', () => loadItems(false));
 $('wallet-action-btn').addEventListener('click', toggleWallet);
+$('topup-copy-btn').addEventListener('click', () => {
+    const addr = MERCHANT_WALLET;
+    if (!addr) return;
+    navigator.clipboard?.writeText(addr).then(() => {
+        notify('Адресу скопійовано', 'success');
+        if (tg) tg.HapticFeedback?.notificationOccurred('success');
+    }).catch(() => {
+        const el = document.createElement('input');
+        el.value = addr; document.body.appendChild(el);
+        el.select(); document.execCommand('copy');
+        document.body.removeChild(el);
+        notify('Адресу скопійовано', 'success');
+    });
+});
 
 $$('.r-tabs [data-mode]').forEach((t) =>
     t.addEventListener('click', () => setMode(t.dataset.mode)));

@@ -17,7 +17,9 @@
         // Configure before rent.js loads. Both are safe to override at runtime.
         window.BACKEND_URL = window.BACKEND_URL || '';
         window.TONCONNECT_MANIFEST = window.TONCONNECT_MANIFEST
-            || 'https://eywqqsgggdgsg.github.io/tonconnect-manifest.json';
+            || 'https://l-anonim-cite-mpf-github-io.vercel.app/tonconnect-manifest.json';
+        window.TON_TO_UAH    = window.TON_TO_UAH    || 180;
+        window.MERCHANT_WALLET = window.MERCHANT_WALLET || 'UQBXSL_HkAPI8HFQ9tfsuQaZodv_GF7XYJBGvc_axpyffBo-';
     </script>
 </head>
 <body data-tab="catalog">
@@ -210,11 +212,15 @@
 
         <div class="method-toggle">
             <button class="method-btn active" data-method="tonconnect">
-                <span class="method-ic">💎</span>TON
+                <span class="method-ic">💎</span>Оплата TON
             </button>
-            <button class="method-btn" data-method="stars">
-                <span class="method-ic">⭐</span>Stars
-            </button>
+        </div>
+
+        <div class="topup-hint" id="topup-hint" style="display:none">
+            <div class="topup-hint-title">💳 Як поповнити гаманець</div>
+            <div class="topup-hint-desc">Переведіть TON на адресу нижче або купіть через Tonkeeper / @wallet</div>
+            <div class="topup-hint-addr" id="topup-addr"></div>
+            <button class="topup-copy-btn" id="topup-copy-btn">Скопіювати адресу</button>
         </div>
 
         <button class="rent-btn" id="rent-btn">
