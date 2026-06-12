@@ -35,6 +35,11 @@ const TR = {
         sign_tx:'Підпишіть транзакцію…', confirming_net:'Підтвердження в мережі…',
         creating_order:'Створюємо замовлення…',
         success_rent:'Оренду оформлено!', success_sale:'Покупку оформлено!',
+        alerts_tab:'Тривоги', alerts_calm:'Тихо', alerts_no_threats:'Активних загроз не зафіксовано',
+        alerts_no_threats_long:'Активних загроз немає. Бережіть себе.',
+        alerts_active:'Активні загрози', alerts_recent:'Останні атаки',
+        alerts_disclaimer:'⚠️ Дані mapa.ua наближені. Не використовуйте для прийняття рішень — слідкуйте за офіційними джерелами.',
+        legend_threat:'Загроза', legend_city:'Місто',
     },
     en: {
         catalog:'Catalog', orders:'Orders', profile:'Profile',
@@ -60,6 +65,11 @@ const TR = {
         sign_tx:'Sign transaction…', confirming_net:'Confirming on-chain…',
         creating_order:'Creating order…',
         success_rent:'Rental confirmed!', success_sale:'Purchase confirmed!',
+        alerts_tab:'Alerts', alerts_calm:'All calm', alerts_no_threats:'No active threats',
+        alerts_no_threats_long:'No active threats. Stay safe.',
+        alerts_active:'Active threats', alerts_recent:'Recent attacks',
+        alerts_disclaimer:'⚠️ mapa.ua data is approximate. Don\'t use for safety decisions — follow official sources.',
+        legend_threat:'Threat', legend_city:'City',
     },
     ru: {
         catalog:'Каталог', orders:'Заказы', profile:'Профиль',
@@ -85,6 +95,11 @@ const TR = {
         sign_tx:'Подпишите транзакцию…', confirming_net:'Подтверждение в сети…',
         creating_order:'Создаём заказ…',
         success_rent:'Аренда оформлена!', success_sale:'Покупка оформлена!',
+        alerts_tab:'Тревоги', alerts_calm:'Спокойно', alerts_no_threats:'Активных угроз нет',
+        alerts_no_threats_long:'Активных угроз нет. Берегите себя.',
+        alerts_active:'Активные угрозы', alerts_recent:'Последние атаки',
+        alerts_disclaimer:'⚠️ Данные mapa.ua приближённые. Не используйте для решений — следите за официальными источниками.',
+        legend_threat:'Угроза', legend_city:'Город',
     },
 };
 
@@ -766,6 +781,245 @@ function closeSuccess() {
     loadItems(true);
 }
 
+// ─── Alerts / Air-raid map ─────────────────────────────────────────────────────
+
+const KIND_META = {
+    drone_piston:    { ua: 'Shahed / БПЛА',   en: 'Shahed / UAV',    ru: 'Shahed / БПЛА',    speed: 165 },
+    drone_jet:       { ua: 'Реактивний БПЛА',  en: 'Jet drone',       ru: 'Реактивный БПЛА', speed: 450 },
+    missile_cruise:  { ua: 'Крилата ракета',  en: 'Cruise missile',  ru: 'Крылатая ракета', speed: 800 },
+    missile_ballistic: { ua: 'Балістична ракета', en: 'Ballistic missile', ru: 'Балл. ракета', speed: 7500 },
+    bomb:            { ua: 'КАБ / Авіабомба',  en: 'Glide bomb',      ru: 'КАБ / Авиабомба',  speed: 750 },
+};
+
+const KIND_ICONS = {
+    drone_piston: `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="2"/><circle cx="5" cy="5" r="2"/><circle cx="19" cy="5" r="2"/><circle cx="5" cy="19" r="2"/><circle cx="19" cy="19" r="2"/><path d="M12 10V8M12 14v2M10 12H8M14 12h2"/></svg>`,
+    drone_jet:    `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2l8 16h-5l-3-6-3 6H4z"/></svg>`,
+    missile_cruise:    `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 14l13-9 5 5-9 13-2-5z"/><path d="M3 14l5 2"/></svg>`,
+    missile_ballistic: `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2v8M9 5l3-3 3 3M12 10c0 4 3 5 3 8a3 3 0 11-6 0c0-3 3-4 3-8z"/></svg>`,
+    bomb:         `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="13" r="6"/><path d="M17 7l3-3M14 4l3 3"/></svg>`,
+};
+
+const ZONE_LABELS = {
+    chauda:'Чауда (Крим)', crimea:'Крим', sevastopol:'Севастополь', gvardiiske:'Гвардійське',
+    black_sea_w:'Чорне море (З)', black_sea_e:'Чорне море (С)', novorossiysk:'Новоросійськ',
+    primorsk:'Приморсько-Ахтарськ', eysk:'Єйськ', rostov:'Ростов', millerovo:'Міллерово',
+    morozovsk:'Морозовськ', kursk:'Курськ', belgorod:'Бєлгород', bryansk:'Брянськ',
+    orel:'Орел', shaykivka:'Шайківка', baltimor:'Балтимор/Воронеж',
+    buturlinovka:'Бутурлинівка', engels:'Енгельс', caspian:'Каспій',
+    mozyr:'Мозир (РБ)', tot_donbas:'ТОТ Донбас', tot_zap:'ТОТ Запоріжжя',
+    unknown:'Невідомо',
+};
+
+const UA_BOUNDS = { lonMin: 22.0, lonMax: 40.5, latMin: 44.0, latMax: 52.5 };
+
+const FALLBACK_CITIES = {
+    kyiv:  { ua: 'Київ',   en: 'Kyiv',   lat: 50.45, lon: 30.52 },
+    odesa: { ua: 'Одеса',  en: 'Odesa',  lat: 46.48, lon: 30.73 },
+    lviv:  { ua: 'Львів',  en: 'Lviv',   lat: 49.84, lon: 24.03 },
+    kharkiv:{ua: 'Харків', en: 'Kharkiv',lat: 49.99, lon: 36.23 },
+    dnipro:{ ua: 'Дніпро', en: 'Dnipro', lat: 48.46, lon: 35.04 },
+    zaporizhzhia: { ua: 'Запоріжжя', en: 'Zaporizhzhia', lat: 47.84, lon: 35.14 },
+    mykolaiv:{ ua:'Миколаїв', en:'Mykolaiv', lat: 46.97, lon: 32.00 },
+    kherson: { ua: 'Херсон', en: 'Kherson', lat: 46.65, lon: 32.62 },
+};
+
+let alertsTimer = null;
+let citiesCache = null;
+
+function lonLatToXY(lon, lat) {
+    const { lonMin, lonMax, latMin, latMax } = UA_BOUNDS;
+    const x = ((lon - lonMin) / (lonMax - lonMin)) * 1000;
+    // Y inverted because SVG grows downward
+    const y = (1 - (lat - latMin) / (latMax - latMin)) * 660;
+    return { x, y };
+}
+
+async function loadCities() {
+    if (citiesCache) return citiesCache;
+    try {
+        const data = await api('/api/alerts/cities');
+        citiesCache = data.cities || {};
+    } catch {
+        citiesCache = {};
+    }
+    return citiesCache;
+}
+
+async function loadAlerts() {
+    try {
+        const [current, attacks] = await Promise.all([
+            api('/api/alerts/current'),
+            api('/api/alerts/attacks?limit=5'),
+        ]);
+        await loadCities();
+        renderAlertsStatus(current);
+        renderAlertsMap(current);
+        renderAlertsStats(current, attacks);
+        renderThreatsList(current);
+        renderRecentAttacks(attacks);
+        updateNavIndicator(current);
+    } catch (e) {
+        console.warn('alerts load failed:', e);
+        $('alerts-status-title').textContent = '⚠️ ' + (lang === 'en' ? 'Unable to load' : 'Не вдалося завантажити');
+        $('alerts-status-sub').textContent = e.message || '';
+    }
+}
+
+function renderAlertsStatus(current) {
+    const box = $('alerts-status');
+    const active = current?.attack?.status === 'active' && (current?.objects?.length || 0) > 0;
+    box.classList.toggle('danger', active);
+    if (active) {
+        const objCount = current.objects.length;
+        $('alerts-status-title').textContent = lang === 'en' ? '⚠ Active attack' : lang === 'ru' ? '⚠ Активная атака' : '⚠ Активна атака';
+        $('alerts-status-sub').textContent =
+            (lang === 'en' ? `${objCount} object${objCount > 1 ? 's' : ''} in the air` :
+             lang === 'ru' ? `Объектов в воздухе: ${objCount}` :
+                              `Об'єктів у повітрі: ${objCount}`);
+    } else {
+        $('alerts-status-title').textContent = lang === 'en' ? 'All calm' : lang === 'ru' ? 'Спокойно' : 'Тихо';
+        $('alerts-status-sub').textContent =
+            lang === 'en' ? 'No active threats detected' :
+            lang === 'ru' ? 'Активных угроз нет' : 'Активних загроз не зафіксовано';
+    }
+}
+
+function renderAlertsMap(current) {
+    const cityG  = $('map-cities');
+    const threatG = $('map-threats');
+
+    // Reference cities
+    if (!cityG.dataset.populated) {
+        cityG.innerHTML = Object.entries(FALLBACK_CITIES).map(([key, c]) => {
+            const { x, y } = lonLatToXY(c.lon, c.lat);
+            const name = c[lang === 'en' ? 'en' : 'ua'];
+            return `<circle class="map-city" cx="${x}" cy="${y}" r="3"/>
+                    <text class="map-city-label" x="${x + 7}" y="${y + 4}">${esc(name)}</text>`;
+        }).join('');
+        cityG.dataset.populated = '1';
+    }
+
+    // Threats
+    const threats = (current?.objects || []).filter(o => o.status === 'active' && Number.isFinite(o.lat) && Number.isFinite(o.lon));
+    threatG.innerHTML = threats.map(o => {
+        const { x, y } = lonLatToXY(o.lon, o.lat);
+        const trail = Array.isArray(o.trail) && o.trail.length > 1
+            ? `<polyline class="map-threat-trail" points="${o.trail.map(p => {
+                const xy = lonLatToXY(p[0], p[1]); return `${xy.x},${xy.y}`;
+              }).join(' ')}"/>`
+            : '';
+        return `<g class="map-threat">
+            ${trail}
+            <circle class="map-threat-glow" cx="${x}" cy="${y}" r="12" fill="url(#threatGlow)"/>
+            <circle class="map-threat-core" cx="${x}" cy="${y}" r="4"/>
+        </g>`;
+    }).join('');
+}
+
+function renderAlertsStats(current, attacksResp) {
+    const stats = $('alerts-stats');
+    const lastAttack = attacksResp?.attacks?.[0] || {};
+    const activeNow = (current?.objects || []).filter(o => o.status === 'active').length;
+    const items = [
+        { num: activeNow, label: lang === 'en' ? 'In air' : 'У повітрі', cls: activeNow > 0 ? 'danger' : '' },
+        { num: lastAttack.total_drones || 0,   label: lang === 'en' ? 'Drones' : 'Дронів',  cls: 'danger' },
+        { num: lastAttack.total_missiles || 0, label: lang === 'en' ? 'Missiles' : 'Ракет', cls: 'danger' },
+        { num: lastAttack.official_shot_total || 0, label: lang === 'en' ? 'Shot down' : 'Збито', cls: 'good' },
+    ];
+    stats.innerHTML = items.map(i => `
+        <div class="alerts-stat-card">
+            <div class="alerts-stat-num ${i.cls}">${i.num}</div>
+            <div class="alerts-stat-label">${esc(i.label)}</div>
+        </div>`).join('');
+}
+
+function renderThreatsList(current) {
+    const list = $('alerts-threats-list');
+    const threats = (current?.objects || []).filter(o => o.status === 'active');
+    $('alerts-count-badge').textContent = threats.length;
+
+    if (!threats.length) {
+        list.innerHTML = `<div class="alerts-empty">${esc(t('alerts_no_threats_long'))}</div>`;
+        return;
+    }
+
+    list.innerHTML = threats.slice(0, 30).map(o => {
+        const meta = KIND_META[o.kind] || KIND_META.drone_piston;
+        const icon = KIND_ICONS[o.kind] || KIND_ICONS.drone_piston;
+        const cls  = o.status === 'eliminated' ? 'eliminated' : o.status === 'lost' ? 'lost' : '';
+        const kindName = meta[lang] || meta.ua;
+        const fromZone = ZONE_LABELS[o.from_zone] || o.from_zone || '?';
+        const toCity = citiesCache?.[o.to_city]?.ua || o.to_city || '?';
+        const speed = o.speed_kmh || meta.speed;
+        return `<div class="threat-card active-threat">
+            <div class="threat-icon-wrap ${cls}">${icon}</div>
+            <div class="threat-info">
+                <div class="threat-title">${esc(o.title || kindName)}</div>
+                <div class="threat-meta">
+                    <span>${esc(fromZone)}</span>
+                    <span class="threat-meta-arrow">→</span>
+                    <span>${esc(toCity)}</span>
+                </div>
+            </div>
+            <div>
+                <div class="threat-speed">${speed} <span style="opacity:0.6">км/г</span></div>
+                <div class="threat-speed-label">${esc(kindName.split(' ')[0])}</div>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function renderRecentAttacks(attacksResp) {
+    const list = $('alerts-attacks-list');
+    const attacks = (attacksResp?.attacks || []).slice(0, 5);
+    if (!attacks.length) {
+        list.innerHTML = `<div class="alerts-empty">—</div>`;
+        return;
+    }
+    list.innerHTML = attacks.map(a => {
+        const d = new Date(a.started_at * 1000);
+        const dateStr = d.toLocaleDateString(lang === 'en' ? 'en-GB' : 'uk-UA', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
+        return `<div class="attack-card">
+            <div class="attack-date">${esc(dateStr)}</div>
+            <div class="attack-stats-mini">
+                <span class="drones-num">◈ ${a.total_drones || 0}</span>
+                <span class="missiles-num">⚡ ${a.total_missiles || 0}</span>
+                <span style="color:var(--green)">✓ ${a.official_shot_total || 0}</span>
+            </div>
+        </div>`;
+    }).join('');
+}
+
+function updateNavIndicator(current) {
+    const active = current?.attack?.status === 'active' && (current?.objects?.length || 0) > 0;
+    const ind = $('nav-alert-indicator');
+    if (ind) ind.hidden = !active;
+}
+
+function startAlertsAutoRefresh() {
+    stopAlertsAutoRefresh();
+    alertsTimer = setInterval(loadAlerts, 30_000);
+}
+function stopAlertsAutoRefresh() {
+    if (alertsTimer) clearInterval(alertsTimer);
+    alertsTimer = null;
+}
+
+$('alerts-refresh-btn')?.addEventListener('click', () => {
+    $('alerts-refresh-btn').classList.add('spin');
+    loadAlerts().finally(() => setTimeout(() => $('alerts-refresh-btn').classList.remove('spin'), 700));
+    if (tg) tg.HapticFeedback?.impactOccurred('light');
+});
+
+// Background ping every 60s to keep indicator fresh even outside alerts tab
+setInterval(async () => {
+    if (state.tab === 'alerts') return; // already auto-refreshing
+    try {
+        const c = await api('/api/alerts/current');
+        updateNavIndicator(c);
+    } catch { /* silent */ }
+}, 60_000);
+
 // ─── Orders ───────────────────────────────────────────────────────────────────
 
 const STATUS_LABEL = {
@@ -877,6 +1131,8 @@ function setTab(tab) {
     if (tab === 'catalog') { headerHidden = false; $('catalog-header')?.classList.remove('hide-scroll'); }
     if (tab === 'orders')   loadOrders();
     if (tab === 'settings') loadSettings();
+    if (tab === 'alerts')   { loadAlerts(); startAlertsAutoRefresh(); }
+    else                    stopAlertsAutoRefresh();
     if (tg) tg.HapticFeedback?.selectionChanged();
 }
 
@@ -967,3 +1223,6 @@ $('search-input').addEventListener('input', e => {
 
 applyLang();
 loadItems(true);
+
+// Prime alert indicator at startup
+api('/api/alerts/current').then(updateNavIndicator).catch(() => {});

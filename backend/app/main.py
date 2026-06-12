@@ -28,7 +28,7 @@ from .middleware import (
     RequestIDMiddleware,
     SecurityHeadersMiddleware,
 )
-from .routers import catalog, checkout, orders, webhook
+from .routers import alerts, catalog, checkout, orders, webhook
 from .services.confirmation import ConfirmationWorker
 
 
@@ -76,3 +76,4 @@ app.include_router(catalog.router)
 app.include_router(checkout.router)
 app.include_router(orders.router)
 app.include_router(webhook.router)
+app.include_router(alerts.router)
