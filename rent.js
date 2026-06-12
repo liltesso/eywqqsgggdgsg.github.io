@@ -857,14 +857,27 @@ const ZONE_LABELS = {
 const UA_BOUNDS = { lonMin: 22.0, lonMax: 40.5, latMin: 44.0, latMax: 52.5 };
 
 const FALLBACK_CITIES = {
-    kyiv:  { ua: 'Київ',   en: 'Kyiv',   lat: 50.45, lon: 30.52 },
-    odesa: { ua: 'Одеса',  en: 'Odesa',  lat: 46.48, lon: 30.73 },
-    lviv:  { ua: 'Львів',  en: 'Lviv',   lat: 49.84, lon: 24.03 },
-    kharkiv:{ua: 'Харків', en: 'Kharkiv',lat: 49.99, lon: 36.23 },
-    dnipro:{ ua: 'Дніпро', en: 'Dnipro', lat: 48.46, lon: 35.04 },
-    zaporizhzhia: { ua: 'Запоріжжя', en: 'Zaporizhzhia', lat: 47.84, lon: 35.14 },
-    mykolaiv:{ ua:'Миколаїв', en:'Mykolaiv', lat: 46.97, lon: 32.00 },
-    kherson: { ua: 'Херсон', en: 'Kherson', lat: 46.65, lon: 32.62 },
+    kyiv:         { ua: 'Київ',         en: 'Kyiv',         lat: 50.45, lon: 30.52 },
+    kharkiv:      { ua: 'Харків',       en: 'Kharkiv',      lat: 49.99, lon: 36.23 },
+    odesa:        { ua: 'Одеса',        en: 'Odesa',        lat: 46.48, lon: 30.73 },
+    dnipro:       { ua: 'Дніпро',       en: 'Dnipro',       lat: 48.46, lon: 35.04 },
+    lviv:         { ua: 'Львів',        en: 'Lviv',         lat: 49.84, lon: 24.03 },
+    zaporizhzhia: { ua: 'Запоріжжя',   en: 'Zaporizhzhia', lat: 47.84, lon: 35.14 },
+    mykolaiv:     { ua: 'Миколаїв',    en: 'Mykolaiv',     lat: 46.97, lon: 32.00 },
+    kherson:      { ua: 'Херсон',      en: 'Kherson',      lat: 46.65, lon: 32.62 },
+    poltava:      { ua: 'Полтава',     en: 'Poltava',      lat: 49.59, lon: 34.55 },
+    sumy:         { ua: 'Суми',        en: 'Sumy',         lat: 50.92, lon: 34.80 },
+    chernihiv:    { ua: 'Чернігів',    en: 'Chernihiv',    lat: 51.50, lon: 31.30 },
+    vinnytsia:    { ua: 'Вінниця',     en: 'Vinnytsia',    lat: 49.23, lon: 28.47 },
+    cherkasy:     { ua: 'Черкаси',     en: 'Cherkasy',     lat: 49.45, lon: 32.06 },
+    zhytomyr:     { ua: 'Житомир',     en: 'Zhytomyr',     lat: 50.25, lon: 28.67 },
+    rivne:        { ua: 'Рівне',       en: 'Rivne',        lat: 50.62, lon: 26.25 },
+    ivano_frank:  { ua: 'Івано-Фр.',   en: 'Ivano-Fr.',    lat: 48.92, lon: 24.71 },
+    ternopil:     { ua: 'Тернопіль',   en: 'Ternopil',     lat: 49.55, lon: 25.60 },
+    lutsk:        { ua: 'Луцьк',       en: 'Lutsk',        lat: 50.74, lon: 25.32 },
+    uzhhorod:     { ua: 'Ужгород',     en: 'Uzhhorod',     lat: 48.62, lon: 22.30 },
+    kryvyi_rih:   { ua: 'Кривий Ріг',  en: 'Kryvyi Rih',   lat: 47.91, lon: 33.38 },
+    khmelnitskyi: { ua: 'Хмельницький',en: 'Khmelnytskyi', lat: 49.42, lon: 27.00 },
 };
 
 let alertsTimer = null;
@@ -975,6 +988,15 @@ function initMapInteraction() {
 $('map-zoom-reset')?.addEventListener('click', () => {
     mapVB = { x: 0, y: 0, w: 1000, h: 660 };
     setMapViewBox();
+    if (tg) tg.HapticFeedback?.impactOccurred('light');
+});
+$('map-zoom-in')?.addEventListener('click', () => {
+    mapZoom(0.68, mapVB.x + mapVB.w / 2, mapVB.y + mapVB.h / 2);
+    if (tg) tg.HapticFeedback?.impactOccurred('light');
+});
+$('map-zoom-out')?.addEventListener('click', () => {
+    mapZoom(1.45, mapVB.x + mapVB.w / 2, mapVB.y + mapVB.h / 2);
+    if (tg) tg.HapticFeedback?.impactOccurred('light');
 });
 
 // ─── Threat detail popup ──────────────────────────────────────────────────────

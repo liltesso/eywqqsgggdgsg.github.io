@@ -62,8 +62,14 @@
                     </radialGradient>
                     <!-- Ukraine fill gradient -->
                     <linearGradient id="uaFill" x1="0%" y1="0%" x2="100%" y2="100%">
-                        <stop offset="0%"   stop-color="#1a2540" stop-opacity="0.7"/>
-                        <stop offset="100%" stop-color="#111828" stop-opacity="0.5"/>
+                        <stop offset="0%"   stop-color="#1c2a46" stop-opacity="0.72"/>
+                        <stop offset="50%"  stop-color="#162038" stop-opacity="0.60"/>
+                        <stop offset="100%" stop-color="#0e1520" stop-opacity="0.52"/>
+                    </linearGradient>
+                    <!-- Water fill gradient -->
+                    <linearGradient id="waterFill" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%"   stop-color="#091828" stop-opacity="0.88"/>
+                        <stop offset="100%" stop-color="#060e1c" stop-opacity="0.78"/>
                     </linearGradient>
                     <!-- Border glow filter -->
                     <filter id="borderGlow" x="-5%" y="-5%" width="110%" height="110%">
@@ -74,30 +80,87 @@
                     <filter id="threatShadow" x="-50%" y="-50%" width="200%" height="200%">
                         <feDropShadow dx="0" dy="0" stdDeviation="4" flood-color="#ff2a2e" flood-opacity="0.8"/>
                     </filter>
-                    <!-- Sea / outside Ukraine overlay -->
+                    <!-- Ukraine clip -->
                     <clipPath id="uaClip">
                         <path d="M 130,54 L 270,47 L 378,47 L 432,23 L 568,8 L 622,16 L 649,54 L 730,93 L 865,194 L 946,272 L 984,365 L 984,388 L 919,419 L 838,427 L 784,466 L 746,497 L 714,489 L 692,520 L 730,567 L 703,606 L 649,629 L 568,621 L 524,598 L 541,544 L 514,466 L 470,474 L 416,466 L 378,489 L 335,536 L 324,505 L 314,388 L 324,350 L 270,311 L 249,303 L 189,311 L 135,272 L 108,210 L 81,163 L 54,140 L 38,109 L 16,85 L 54,47 L 108,47 Z"/>
                     </clipPath>
+                    <!-- Crimea diagonal hatch (occupied territory) -->
+                    <pattern id="crimea-hatch" x="0" y="0" width="8" height="8"
+                             patternUnits="userSpaceOnUse" patternTransform="rotate(42)">
+                        <line x1="0" y1="0" x2="0" y2="8" stroke="rgba(130,160,230,0.55)" stroke-width="1.2"/>
+                    </pattern>
+                    <!-- Subtle lat/lon grid inside UA -->
+                    <pattern id="ua-grid" x="0" y="0" width="50" height="44"
+                             patternUnits="userSpaceOnUse">
+                        <path d="M 50 0 L 0 0 0 44" fill="none"
+                              stroke="rgba(255,255,255,0.018)" stroke-width="0.5"/>
+                    </pattern>
                 </defs>
 
-                <!-- Sea / outside area (dark) -->
-                <rect width="1000" height="660" fill="#08090f" rx="0"/>
+                <!-- Sea / outside (dark navy) -->
+                <rect width="1000" height="660" fill="#060b14"/>
+
+                <!-- Black Sea: south of Ukraine -->
+                <path class="map-black-sea" d="M 0,480 L 130,430 L 220,440 L 330,490 L 416,495 L 470,472 L 514,466 L 541,544 L 524,598 L 568,621 L 649,629 L 703,606 L 730,567 L 784,521 L 1000,480 L 1000,660 L 0,660 Z"/>
 
                 <!-- Ukraine filled body -->
                 <path class="ua-body" d="M 130,54 L 270,47 L 378,47 L 432,23 L 568,8 L 622,16 L 649,54 L 730,93 L 865,194 L 946,272 L 984,365 L 984,388 L 919,419 L 838,427 L 784,466 L 746,497 L 714,489 L 692,520 L 730,567 L 703,606 L 649,629 L 568,621 L 524,598 L 541,544 L 514,466 L 470,474 L 416,466 L 378,489 L 335,536 L 324,505 L 314,388 L 324,350 L 270,311 L 249,303 L 189,311 L 135,272 L 108,210 L 81,163 L 54,140 L 38,109 L 16,85 L 54,47 L 108,47 Z"
                       fill="url(#uaFill)"/>
 
+                <!-- Grid overlay inside Ukraine -->
+                <rect class="map-grid-overlay" x="0" y="0" width="1000" height="660" clip-path="url(#uaClip)"/>
+
+                <!-- Sea of Azov (drawn over Ukraine body to show water) -->
+                <path class="map-azov-sea"
+                      d="M 692,477 L 714,467 L 784,450 L 838,427 L 919,404 L 962,378 L 962,400 L 838,443 L 784,521 L 708,511 Z"/>
+
                 <!-- Dnipro river -->
-                <polyline class="map-river"
-                    points="595,31 568,109 514,194 486,233 465,163 486,233 514,272 568,311 649,311 703,311 708,358 676,388 622,411 576,448 568,466"/>
+                <path class="map-river" fill="none"
+                      d="M 597,28 C 582,65 562,110 535,165 C 516,202 504,235 504,245
+                         C 510,268 528,278 555,300 C 596,325 644,318 695,318
+                         C 712,336 712,356 700,376 C 682,400 646,414 614,430
+                         C 594,445 578,455 571,470"/>
+                <!-- Dniester river (Дністер) - W Ukraine -->
+                <path class="map-river" fill="none"
+                      d="M 135,100 C 148,135 155,170 160,210
+                         C 168,250 178,290 200,330
+                         C 220,366 248,395 265,430
+                         C 290,470 318,490 335,510"/>
+                <!-- Southern Bug river -->
+                <path class="map-river" fill="none"
+                      d="M 294,210 C 302,240 315,270 330,300
+                         C 348,334 368,360 390,390
+                         C 408,415 425,440 445,460"/>
+
+                <!-- Crimea: occupied territory (separate fill + hatch) -->
+                <path class="ua-crimea"
+                      d="M 514,466 L 541,544 L 524,598 L 568,621 L 649,629 L 703,606 L 730,567 L 692,520 Z"/>
+                <path class="ua-crimea-hatch"
+                      d="M 514,466 L 541,544 L 524,598 L 568,621 L 649,629 L 703,606 L 730,567 L 692,520 Z"/>
 
                 <!-- Ukraine border (glow + crisp) -->
                 <path class="ua-border-glow" d="M 130,54 L 270,47 L 378,47 L 432,23 L 568,8 L 622,16 L 649,54 L 730,93 L 865,194 L 946,272 L 984,365 L 984,388 L 919,419 L 838,427 L 784,466 L 746,497 L 714,489 L 692,520 L 730,567 L 703,606 L 649,629 L 568,621 L 524,598 L 541,544 L 514,466 L 470,474 L 416,466 L 378,489 L 335,536 L 324,505 L 314,388 L 324,350 L 270,311 L 249,303 L 189,311 L 135,272 L 108,210 L 81,163 L 54,140 L 38,109 L 16,85 L 54,47 L 108,47 Z"/>
-                <path class="ua-border" d="M 130,54 L 270,47 L 378,47 L 432,23 L 568,8 L 622,16 L 649,54 L 730,93 L 865,194 L 946,272 L 984,365 L 984,388 L 919,419 L 838,427 L 784,466 L 746,497 L 714,489 L 692,520 L 730,567 L 703,606 L 649,629 L 568,621 L 524,598 L 541,544 L 514,466 L 470,474 L 416,466 L 378,489 L 335,536 L 324,505 L 314,388 L 324,350 L 270,311 L 249,303 L 189,311 L 135,272 L 108,210 L 81,163 L 54,140 L 38,109 L 16,85 L 54,47 L 108,47 Z"/>
+                <path class="ua-border"     d="M 130,54 L 270,47 L 378,47 L 432,23 L 568,8 L 622,16 L 649,54 L 730,93 L 865,194 L 946,272 L 984,365 L 984,388 L 919,419 L 838,427 L 784,466 L 746,497 L 714,489 L 692,520 L 730,567 L 703,606 L 649,629 L 568,621 L 524,598 L 541,544 L 514,466 L 470,474 L 416,466 L 378,489 L 335,536 L 324,505 L 314,388 L 324,350 L 270,311 L 249,303 L 189,311 L 135,272 L 108,210 L 81,163 L 54,140 L 38,109 L 16,85 L 54,47 L 108,47 Z"/>
 
-                <!-- Cities -->
+                <!-- Water labels -->
+                <text class="map-water-label" x="420" y="590" text-anchor="middle" font-size="11">Чорне море</text>
+                <text class="map-water-label" x="840" y="460" text-anchor="middle" font-size="8.5">Азовське море</text>
+                <text class="map-water-label" x="628" y="588" text-anchor="middle" font-size="7.5" opacity="0.7">Крим ⚠</text>
+
+                <!-- Compass rose -->
+                <g class="map-compass" transform="translate(967,42)">
+                    <circle r="17" fill="rgba(0,0,0,0.52)" stroke="rgba(255,255,255,0.10)" stroke-width="0.5"/>
+                    <polygon points="0,-13 2.5,-5 0,-8.5 -2.5,-5" fill="#d41115" opacity="0.80"/>
+                    <polygon points="0,13 2.5,5 0,8.5 -2.5,5" fill="rgba(255,255,255,0.32)"/>
+                    <polygon points="-13,0 -5,2.5 -8.5,0 -5,-2.5" fill="rgba(255,255,255,0.18)"/>
+                    <polygon points="13,0 5,2.5 8.5,0 5,-2.5" fill="rgba(255,255,255,0.18)"/>
+                    <text x="0" y="-18" text-anchor="middle" fill="rgba(255,255,255,0.38)"
+                          font-size="6.5" font-family="sans-serif" font-weight="700">N</text>
+                </g>
+
+                <!-- Cities (populated via JS) -->
                 <g id="map-cities"></g>
-                <!-- Threats -->
+                <!-- Threats (populated via JS) -->
                 <g id="map-threats"></g>
             </svg>
 
@@ -107,13 +170,18 @@
                 <span><i class="ldot blue"></i><span data-i18n="legend_city">Місто</span></span>
                 <span><i class="ldot river"></i><span>Дніпро</span></span>
             </div>
+            <!-- Zoom controls -->
+            <div class="map-zoom-btns" role="group" aria-label="Масштаб карти">
+                <button class="map-zoom-btn" id="map-zoom-in"  aria-label="Збільшити">+</button>
+                <button class="map-zoom-btn" id="map-zoom-out" aria-label="Зменшити">−</button>
+            </div>
             <button class="map-zoom-reset" id="map-zoom-reset" title="Скинути вид">
                 <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
                     <path d="M3 12a9 9 0 019-9 9 9 0 016.4 2.6L21 8"/><path d="M21 3v5h-5"/>
                     <path d="M21 12a9 9 0 01-9 9 9 9 0 01-6.4-2.6L3 16"/><path d="M3 21v-5h5"/>
                 </svg>
             </button>
-            <div class="map-zoom-hint">Pinch / scroll для зуму</div>
+            <div class="map-zoom-hint">Pinch / scroll / ± для зуму</div>
 
             <!-- Threat detail popup -->
             <div class="threat-popup" id="threat-popup" hidden>
