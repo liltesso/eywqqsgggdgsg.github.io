@@ -323,6 +323,33 @@ function visibleItems() {
         (g.nft_address || '').toLowerCase().includes(q));
 }
 
+function renderCatalogStats() {
+    const bar = $('catalog-stats-bar');
+    if (!bar) return;
+    const n = visibleItems().length;
+    if (!n) { bar.hidden = true; return; }
+
+    const wordForm = n === 1 ? 'подарунок' : (n >= 2 && n <= 4 ? 'подарунки' : 'подарунків');
+    let html = `<span class="catalog-stats-count">${n} ${wordForm}</span>`;
+
+    const activeF = Object.entries(state.filters).filter(([,v]) => v);
+    if (activeF.length) {
+        html += `<span class="catalog-stats-sep">•</span>`;
+        html += activeF.map(([k, v]) =>
+            `<span class="catalog-stats-filter-tag">${esc(t(k))}: ${esc(v)}
+             <button onclick="clearFilter('${esc(k)}')" aria-label="clear">×</button></span>`
+        ).join('');
+    }
+    bar.innerHTML = html;
+    bar.hidden = false;
+}
+
+window.clearFilter = function(key) {
+    state.filters[key] = null;
+    $('filter-active-dot').hidden = !hasActiveFilters();
+    loadItems(true);
+};
+
 function renderGrid() {
     const grid  = $('gifts-grid');
     const items = visibleItems();
@@ -330,6 +357,7 @@ function renderGrid() {
         grid.innerHTML = stateCell('🎁',
             state.query ? t('not_found') || 'Нічого не знайдено' : 'Каталог порожній',
             state.query ? `«${esc(state.query)}»` : 'Спробуйте інший фільтр');
+        renderCatalogStats();
         return;
     }
     grid.innerHTML = items.map((g, i) =>
@@ -338,6 +366,7 @@ function renderGrid() {
         const idx = +card.dataset.idx;
         card.addEventListener('click', () => openModal(items[idx]));
     });
+    renderCatalogStats();
 }
 
 // Gift card placeholder SVG
@@ -355,8 +384,18 @@ function imgMarkup(g) {
         : '';
 }
 
+function cardAttrChips(g) {
+    const attrs = [g.model, g.backdrop, g.symbol].filter(Boolean).slice(0, 3);
+    if (!attrs.length) return '';
+    return `<div class="card-attrs">${attrs.map(a =>
+        `<span class="card-attr">${esc(a)}</span>`).join('')}</div>`;
+}
+
 function rentCard(g, i) {
     const uah = tonToUah(g.price_per_day_ton);
+    const discount = g.discount_per_day ? Math.round(g.discount_per_day * 100) : 0;
+    const discBadge = discount > 0
+        ? `<div class="card-discount">-${discount}%</div>` : '';
     return `
     <div class="gift-card" data-idx="${i}" role="button" tabindex="0" style="--i:${i}">
         <div class="gift-card-img-wrap">
@@ -366,8 +405,10 @@ function rentCard(g, i) {
             <div class="gift-card-img-glow"></div>
             <div class="gift-card-days-badge">${g.min_duration_days}–${g.max_duration_days}d</div>
             <div class="gift-card-ton-badge">◈ ${g.price_per_day_ton}</div>
+            ${discBadge}
             <div class="gift-card-over">
                 <div class="gift-card-name">${esc(g.name)}</div>
+                ${cardAttrChips(g)}
                 <div class="gift-card-price-row">
                     <span class="gift-card-ton">◈ ${g.price_per_day_ton}<span class="cur-label">TON/d</span></span>
                     <span class="gift-card-uah">${uah}</span>
@@ -391,6 +432,7 @@ function saleCard(g, i) {
             <div class="gift-card-ton-badge">◈ ${g.price_with_markup}</div>
             <div class="gift-card-over">
                 <div class="gift-card-name">${esc(g.name)}</div>
+                ${cardAttrChips(g)}
                 <div class="gift-card-price-row">
                     <span class="gift-card-ton">◈ ${g.price_with_markup}<span class="cur-label">${esc(cur)}</span></span>
                     <span class="gift-card-uah">${uah}</span>
@@ -834,6 +876,137 @@ function lonLatToXY(lon, lat) {
     return { x, y };
 }
 
+// ─── Map zoom / pan ───────────────────────────────────────────────────────────
+
+let mapVB = { x: 0, y: 0, w: 1000, h: 660 };
+const MAP_MIN_W = 220;
+
+function setMapViewBox() {
+    const svg = $('alerts-map');
+    if (svg) svg.setAttribute('viewBox', `${mapVB.x} ${mapVB.y} ${mapVB.w} ${mapVB.h}`);
+}
+
+function clientToSvgCoords(svg, cx, cy) {
+    const rect = svg.getBoundingClientRect();
+    return {
+        x: mapVB.x + (cx - rect.left) * (mapVB.w / rect.width),
+        y: mapVB.y + (cy - rect.top)  * (mapVB.h / rect.height),
+    };
+}
+
+function mapZoom(scaleFactor, pivotX, pivotY) {
+    const newW = Math.max(MAP_MIN_W, Math.min(1000, mapVB.w * scaleFactor));
+    const newH = newW * (660 / 1000);
+    mapVB.x = Math.max(0, Math.min(1000 - newW, mapVB.x + (pivotX - mapVB.x) * (1 - newW / mapVB.w)));
+    mapVB.y = Math.max(0, Math.min(660  - newH, mapVB.y + (pivotY - mapVB.y) * (1 - newH / mapVB.h)));
+    mapVB.w = newW;
+    mapVB.h = newH;
+    setMapViewBox();
+}
+
+function initMapInteraction() {
+    const svg = $('alerts-map');
+    if (!svg || svg._interactionBound) return;
+    svg._interactionBound = true;
+
+    // Wheel zoom
+    svg.addEventListener('wheel', e => {
+        e.preventDefault();
+        const p = clientToSvgCoords(svg, e.clientX, e.clientY);
+        mapZoom(e.deltaY > 0 ? 1.18 : 0.85, p.x, p.y);
+    }, { passive: false });
+
+    // Touch / pointer pan + pinch
+    const ptrs = new Map();
+    let panStart = null;
+    let pinchDist0 = null;
+
+    function getPointerPair() {
+        const [a, b] = [...ptrs.values()];
+        return { cx: (a.x + b.x) / 2, cy: (a.y + b.y) / 2, dist: Math.hypot(a.x - b.x, a.y - b.y) };
+    }
+
+    svg.addEventListener('pointerdown', e => {
+        svg.setPointerCapture(e.pointerId);
+        ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+        if (ptrs.size === 1) {
+            panStart = { cx: e.clientX, cy: e.clientY, vbX: mapVB.x, vbY: mapVB.y };
+            pinchDist0 = null;
+        } else if (ptrs.size === 2) {
+            pinchDist0 = getPointerPair().dist;
+            panStart = null;
+        }
+        svg.classList.add('dragging');
+    });
+
+    svg.addEventListener('pointermove', e => {
+        if (!ptrs.has(e.pointerId)) return;
+        ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+        if (ptrs.size === 2 && pinchDist0 !== null) {
+            const pair = getPointerPair();
+            const scale = pinchDist0 / pair.dist;
+            pinchDist0 = pair.dist;
+            const p = clientToSvgCoords(svg, pair.cx, pair.cy);
+            mapZoom(scale, p.x, p.y);
+        } else if (ptrs.size === 1 && panStart) {
+            const rect = svg.getBoundingClientRect();
+            const scaleX = mapVB.w / rect.width;
+            const scaleY = mapVB.h / rect.height;
+            const dx = (e.clientX - panStart.cx) * scaleX;
+            const dy = (e.clientY - panStart.cy) * scaleY;
+            mapVB.x = Math.max(0, Math.min(1000 - mapVB.w, panStart.vbX - dx));
+            mapVB.y = Math.max(0, Math.min(660  - mapVB.h, panStart.vbY - dy));
+            setMapViewBox();
+        }
+    });
+
+    function onPointerUp(e) {
+        ptrs.delete(e.pointerId);
+        if (ptrs.size < 2) pinchDist0 = null;
+        if (ptrs.size === 0) { panStart = null; svg.classList.remove('dragging'); }
+    }
+    svg.addEventListener('pointerup',     onPointerUp);
+    svg.addEventListener('pointercancel', onPointerUp);
+}
+
+$('map-zoom-reset')?.addEventListener('click', () => {
+    mapVB = { x: 0, y: 0, w: 1000, h: 660 };
+    setMapViewBox();
+});
+
+// ─── Threat detail popup ──────────────────────────────────────────────────────
+
+let _threatObjects = [];
+
+function showThreatPopup(o) {
+    const meta = KIND_META[o.kind] || KIND_META.drone_piston;
+    const icon = KIND_ICONS[o.kind] || KIND_ICONS.drone_piston;
+    const kindName = meta[lang] || meta.ua;
+    const fromZone = ZONE_LABELS[o.from_zone] || o.from_zone || '?';
+    const toCity = citiesCache?.[o.to_city]?.ua || o.to_city || '?';
+    const speed = o.speed_kmh || meta.speed;
+    const heading = o.heading_deg != null ? `${o.heading_deg}°` : null;
+    const statusLabel = o.status === 'eliminated' ? '💥 Збито' : o.status === 'lost' ? '? Втрачено' : '🔴 Активний';
+
+    $('map-threat-popup-icon').innerHTML = icon;
+    $('map-threat-popup-title').textContent = o.title || kindName;
+    $('map-threat-popup-route').innerHTML =
+        `<span>${esc(fromZone)}</span><span style="opacity:0.5">→</span><span>${esc(toCity)}</span>`;
+    $('map-threat-popup-meta').innerHTML = [
+        `<span class="popup-tag popup-tag-speed">${speed} км/г</span>`,
+        `<span class="popup-tag popup-tag-status">${statusLabel}</span>`,
+        heading ? `<span class="popup-tag popup-tag-heading">↗ ${esc(heading)}</span>` : '',
+    ].join('');
+
+    $('map-threat-popup').hidden = false;
+    if (tg) tg.HapticFeedback?.impactOccurred('light');
+}
+
+$('map-threat-popup-close')?.addEventListener('click', () => {
+    $('map-threat-popup').hidden = true;
+});
+
 async function loadCities() {
     if (citiesCache) return citiesCache;
     try {
@@ -901,19 +1074,31 @@ function renderAlertsMap(current) {
 
     // Threats
     const threats = (current?.objects || []).filter(o => o.status === 'active' && Number.isFinite(o.lat) && Number.isFinite(o.lon));
-    threatG.innerHTML = threats.map(o => {
+    _threatObjects = threats;
+    threatG.innerHTML = threats.map((o, idx) => {
         const { x, y } = lonLatToXY(o.lon, o.lat);
         const trail = Array.isArray(o.trail) && o.trail.length > 1
             ? `<polyline class="map-threat-trail" points="${o.trail.map(p => {
                 const xy = lonLatToXY(p[0], p[1]); return `${xy.x},${xy.y}`;
               }).join(' ')}"/>`
             : '';
-        return `<g class="map-threat">
+        return `<g class="map-threat" data-tidx="${idx}">
             ${trail}
             <circle class="map-threat-glow" cx="${x}" cy="${y}" r="12" fill="url(#threatGlow)"/>
             <circle class="map-threat-core" cx="${x}" cy="${y}" r="4"/>
         </g>`;
     }).join('');
+
+    // Wire click on each threat marker
+    threatG.querySelectorAll('.map-threat').forEach(el => {
+        el.addEventListener('click', e => {
+            e.stopPropagation();
+            const idx = +el.dataset.tidx;
+            if (_threatObjects[idx]) showThreatPopup(_threatObjects[idx]);
+        });
+    });
+
+    initMapInteraction();
 }
 
 function renderAlertsStats(current, attacksResp) {

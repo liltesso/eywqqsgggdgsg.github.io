@@ -55,9 +55,9 @@
                         <feDropShadow dx="0" dy="0" stdDeviation="3" flood-color="#d41115" flood-opacity="0.35"/>
                     </filter>
                 </defs>
-                <!-- Ukraine outline (simplified) -->
-                <path id="ua-outline" d="M150,180 L230,150 L310,135 L380,140 L420,120 L480,110 L540,125 L590,115 L640,130 L700,150 L760,170 L810,200 L850,240 L870,290 L860,340 L840,390 L800,430 L760,470 L710,495 L660,510 L600,520 L540,525 L480,520 L420,510 L360,490 L300,460 L250,420 L210,370 L180,320 L160,260 L150,180 Z"
-                      fill="rgba(255,255,255,0.025)" stroke="rgba(255,255,255,0.18)" stroke-width="1.5" filter="url(#mapShadow)"/>
+                <!-- Ukraine outline — simplified geographic coordinates -->
+                <path id="ua-outline" d="M 130,54 L 270,47 L 378,47 L 432,23 L 568,8 L 622,16 L 649,54 L 730,93 L 865,194 L 946,272 L 984,365 L 984,388 L 919,419 L 838,427 L 784,466 L 746,497 L 714,489 L 692,520 L 730,567 L 703,606 L 649,629 L 568,621 L 524,598 L 541,544 L 514,466 L 470,474 L 416,466 L 378,489 L 335,536 L 324,505 L 314,388 L 324,350 L 270,311 L 249,303 L 189,311 L 135,272 L 108,210 L 81,163 L 54,140 L 38,109 L 16,85 L 54,47 L 108,47 Z"
+                      fill="rgba(255,255,255,0.028)" stroke="rgba(255,255,255,0.22)" stroke-width="1.2" filter="url(#mapShadow)"/>
                 <!-- City reference dots -->
                 <g id="map-cities"></g>
                 <!-- Threat markers -->
@@ -66,6 +66,22 @@
             <div class="alerts-map-legend">
                 <span><i class="legend-dot" style="background:#ff2a2e"></i> <span data-i18n="legend_threat">Загроза</span></span>
                 <span><i class="legend-dot" style="background:#3b9eff"></i> <span data-i18n="legend_city">Місто</span></span>
+            </div>
+            <button class="map-zoom-reset" id="map-zoom-reset" title="Скинути зум" aria-label="Скинути зум">
+                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+                    <path d="M3 12a9 9 0 019-9 9 9 0 016.4 2.6L21 8"/><path d="M21 3v5h-5"/>
+                    <path d="M21 12a9 9 0 01-9 9 9 9 0 01-6.4-2.6L3 16"/><path d="M3 21v-5h5"/>
+                </svg>
+            </button>
+            <!-- Threat detail popup -->
+            <div class="map-threat-popup" id="map-threat-popup" hidden>
+                <button class="map-threat-popup-close" id="map-threat-popup-close">×</button>
+                <div class="map-threat-popup-icon" id="map-threat-popup-icon"></div>
+                <div class="map-threat-popup-body">
+                    <div class="map-threat-popup-title" id="map-threat-popup-title"></div>
+                    <div class="map-threat-popup-route" id="map-threat-popup-route"></div>
+                    <div class="map-threat-popup-meta" id="map-threat-popup-meta"></div>
+                </div>
             </div>
         </div>
 
@@ -140,6 +156,8 @@
             </button>
         </div>
     </header>
+
+    <div class="catalog-stats-bar" id="catalog-stats-bar" hidden></div>
 
     <main class="r-grid" id="gifts-grid" aria-live="polite">
         <div class="gift-skeleton"></div><div class="gift-skeleton"></div>
