@@ -1481,22 +1481,33 @@ body {
 .stat-card:nth-child(3) { animation-delay: 0.14s; }
 .stat-card:nth-child(4) { animation-delay: 0.20s; }
 
-/* ─── Ambient drifting aurora (GPU-light, behind everything) */
-body::before {
-    content: '';
-    position: fixed; inset: -20% -20% -20% -20%;
+/* ─── Ambient crimson ribbon background (matches main site) ── */
+/* Moving red ribbons (canvas) — kept very transparent via JS globalAlpha. */
+#bg-canvas {
+    position: fixed; inset: 0;
+    width: 100%; height: 100%;
     z-index: -1; pointer-events: none;
-    background:
-        radial-gradient(38% 30% at 22% 18%, rgba(201,16,19,0.055), transparent 60%),
-        radial-gradient(34% 28% at 82% 30%, rgba(46,141,224,0.045), transparent 62%),
-        radial-gradient(46% 34% at 50% 96%, rgba(201,16,19,0.035), transparent 64%);
-    animation: aurora-drift 26s ease-in-out infinite alternate;
-    will-change: transform;
+    opacity: 0.9;
 }
-@keyframes aurora-drift {
-    0%   { transform: translate3d(0,0,0)        scale(1);    }
-    50%  { transform: translate3d(2.5%,-2%,0)   scale(1.08); }
-    100% { transform: translate3d(-2%,2.5%,0)   scale(1.04); }
+
+/* Soft red сіяння in the corners (the glow, kept subtle) */
+.glow-spot {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(140px);
+    z-index: -1; pointer-events: none;
+    opacity: 0.13;
+    mix-blend-mode: screen;
+}
+.spot-1 {
+    top: 8%; left: -22%;
+    width: 78vw; height: 78vw; max-width: 620px; max-height: 620px;
+    background: radial-gradient(circle, var(--accent) 0%, transparent 70%);
+}
+.spot-2 {
+    bottom: 10%; right: -22%;
+    width: 78vw; height: 78vw; max-width: 620px; max-height: 620px;
+    background: radial-gradient(circle, var(--accent) 0%, transparent 70%);
 }
 
 /* ─── Safe-area for landscape notches (left / right) ─────── */
@@ -1619,7 +1630,6 @@ body::before {
         transition-duration: 0.05ms !important;
         scroll-behavior: auto !important;
     }
-    body::before { animation: none; }
     .r-brand-dot, .nav-alert-dot { animation: none; }
     .gift-card::after, .gift-card:hover::after { display: none; }
 }

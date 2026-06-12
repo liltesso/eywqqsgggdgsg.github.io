@@ -22,6 +22,11 @@
 </head>
 <body data-tab="catalog">
 
+<!-- ══════════════════ AMBIENT BACKGROUND ══════════════════ -->
+<canvas id="bg-canvas" aria-hidden="true"></canvas>
+<div class="glow-spot spot-1" aria-hidden="true"></div>
+<div class="glow-spot spot-2" aria-hidden="true"></div>
+
 <!-- ══════════════════ ALERTS / MAP ══════════════════ -->
 <section class="view hidden" data-view="alerts">
 
@@ -455,6 +460,7 @@
 <!-- TOASTS -->
 <div class="toast-stack" id="toasts" aria-live="polite"></div>
 
+<script src="bg.js"></script>
 <script src="rent.js"></script>
 </body>
 </html>
