@@ -22,7 +22,7 @@ from ..telegram import answer_pre_checkout, send_message, send_webapp_button
 router = APIRouter(prefix="/api", tags=["webhook"])
 
 # Public URL of the deployed Mini App (rent.html).
-MINI_APP_URL = "https://eywqqsgggdgsg.github.io/rent.html"
+MINI_APP_URL = "https://l-anonim-cite-mpf-github-io.vercel.app/"
 
 
 @router.post("/telegram/webhook")
