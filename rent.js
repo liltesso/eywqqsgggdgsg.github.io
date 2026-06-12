@@ -92,7 +92,7 @@ async function api(path, options = {}) {
     }
     const res = await fetch(`${BACKEND_URL}${path}`, {
         ...options,
-        headers: { ...authHeaders(), ...(options.headers || {}) },
+        headers: { ...authHeaders(), ...(options.headers || {}), 'ngrok-skip-browser-warning': '1' },
     });
     let body = {};
     try { body = await res.json(); } catch { /* may be empty */ }
