@@ -1,5 +1,5 @@
 /**
- * Gifts Market Mini App — rent.js
+ * Asset Market Mini App — rent.js
  * Three tabs: Catalog / Orders / Profile
  */
 
@@ -46,7 +46,7 @@ const TR = {
         rate_app:'Оцінити сервіс', terms:'Публічна оферта', privacy:'Політика конфіденційності',
         faq:'Часті запитання', how_it_works:'Як це працює',
         provider:'Постачальник', data_source:'Джерело даних',
-        about_desc:'Gifts Market — маркетплейс для оренди та купівлі колекційних Telegram-подарунків (NFT) у мережі TON. Оплата здійснюється напряму з вашого гаманця, а подарунок зараховується на акаунт одразу після підтвердження транзакції в блокчейні.',
+        about_desc:'Asset Market — маркетплейс для оренди та купівлі колекційних Telegram-подарунків (NFT) у мережі TON. Оплата здійснюється напряму з вашого гаманця, а подарунок зараховується на акаунт одразу після підтвердження транзакції в блокчейні.',
         version_label:'Версія', copied:'Скопійовано', refreshed:'Оновлено',
         price_range:'Ціна, TON', discount_only:'Лише зі знижкою', sort_label:'Сортування',
         from_label:'від', to_label:'до', any:'Будь-яка', wallet_balance:'Баланс гаманця',
@@ -91,7 +91,7 @@ const TR = {
         rate_app:'Rate the service', terms:'Terms of Service', privacy:'Privacy Policy',
         faq:'FAQ', how_it_works:'How it works',
         provider:'Provider', data_source:'Data source',
-        about_desc:'Gifts Market is a marketplace for renting and buying collectible Telegram gifts (NFTs) on the TON blockchain. Payments go directly from your wallet, and the gift is credited to your account as soon as the transaction is confirmed on-chain.',
+        about_desc:'Asset Market is a marketplace for renting and buying collectible Telegram gifts (NFTs) on the TON blockchain. Payments go directly from your wallet, and the gift is credited to your account as soon as the transaction is confirmed on-chain.',
         version_label:'Version', copied:'Copied', refreshed:'Refreshed',
         price_range:'Price, TON', discount_only:'Discounted only', sort_label:'Sort by',
         from_label:'from', to_label:'to', any:'Any', wallet_balance:'Wallet balance',
@@ -136,7 +136,7 @@ const TR = {
         rate_app:'Оценить сервис', terms:'Публичная оферта', privacy:'Политика конфиденциальности',
         faq:'Частые вопросы', how_it_works:'Как это работает',
         provider:'Поставщик', data_source:'Источник данных',
-        about_desc:'Gifts Market — маркетплейс для аренды и покупки коллекционных Telegram-подарков (NFT) в сети TON. Оплата проходит напрямую с вашего кошелька, а подарок зачисляется на аккаунт сразу после подтверждения транзакции в блокчейне.',
+        about_desc:'Asset Market — маркетплейс для аренды и покупки коллекционных Telegram-подарков (NFT) в сети TON. Оплата проходит напрямую с вашего кошелька, а подарок зачисляется на аккаунт сразу после подтверждения транзакции в блокчейне.',
         version_label:'Версия', copied:'Скопировано', refreshed:'Обновлено',
         price_range:'Цена, TON', discount_only:'Только со скидкой', sort_label:'Сортировка',
         from_label:'от', to_label:'до', any:'Любая', wallet_balance:'Баланс кошелька',
@@ -463,29 +463,49 @@ function cardAttrChips(g) {
         `<span class="card-attr">${esc(a)}</span>`).join('')}</div>`;
 }
 
+const TG_ICON = `<svg viewBox="0 0 24 24" width="13" height="13" fill="currentColor" aria-hidden="true"><path d="M12 0C5.37 0 0 5.37 0 12s5.37 12 12 12 12-5.37 12-12S18.63 0 12 0zm5.56 8.18-2.04 9.6c-.15.66-.54.84-1.08.51l-3-2.22-1.44 1.38c-.15.18-.36.27-.72.27l.27-3.06 6.9-6.24c.3-.27-.06-.42-.45-.15L6.45 13.8l-2.94-.93c-.63-.18-.63-.63.15-.93l10.8-4.17c.54-.18 1.02.15.84.9z"/></svg>`;
+
+function tgBtn(name) {
+    const link = tgNftLink(name);
+    if (!link) return '';
+    return `<a class="gift-card-tg-btn" href="${esc(link)}" target="_blank" rel="noopener"
+               onclick="event.stopPropagation()" title="Відкрити в Telegram">${TG_ICON}</a>`;
+}
+
 function rentCard(g, i) {
-    const uah = tonToUah(g.price_per_day_ton);
+    const uah      = tonToUah(g.price_per_day_ton);
     const discount = g.discount_per_day ? Math.round(g.discount_per_day * 100) : 0;
     const discBadge = discount > 0
         ? `<div class="card-discount">-${discount}%</div>` : '';
+    const autoRelist = g.auto_relist
+        ? `<div class="card-auto-relist">↺ Авто-рилістинг</div>` : '';
     return `
     <div class="gift-card" data-idx="${i}" role="button" tabindex="0" style="--i:${i}">
         <div class="gift-card-img-wrap">
             ${imgMarkup(g)}
             <div class="gift-card-placeholder" style="${g.image_url ? 'display:none' : ''}">${PLACEHOLDER_SVG}</div>
-            <div class="gift-card-img-overlay"></div>
             <div class="gift-card-img-glow"></div>
-            <div class="gift-card-days-badge">${g.min_duration_days}–${g.max_duration_days}d</div>
-            <div class="gift-card-ton-badge">◈ ${g.price_per_day_ton}</div>
             ${discBadge}
-            <div class="gift-card-over">
-                <div class="gift-card-name">${esc(g.name)}</div>
-                ${cardAttrChips(g)}
-                <div class="gift-card-price-row">
-                    <span class="gift-card-ton">◈ ${g.price_per_day_ton}<span class="cur-label">TON/d</span></span>
-                    <span class="gift-card-uah">${uah}</span>
-                </div>
+            ${tgBtn(g.name)}
+        </div>
+        <div class="gift-card-body">
+            <div class="gift-card-name">${esc(g.name)}</div>
+            ${g.collection_name ? `<div class="gift-card-collection">${esc(g.collection_name)}</div>` : ''}
+            <div class="gift-card-price-row">
+                <span class="gift-card-ton">◈ ${g.price_per_day_ton}<span class="cur-label">/день</span></span>
+                <span class="gift-card-uah">≈ ${uah} ₴</span>
             </div>
+            <div class="card-meta-row">
+                <span class="card-meta-item">
+                    <span class="card-meta-key">Термін</span>
+                    <span class="card-meta-val">${g.min_duration_days}–${g.max_duration_days}д</span>
+                </span>
+                ${discount > 0 ? `<span class="card-meta-item">
+                    <span class="card-meta-key">Знижка</span>
+                    <span class="card-meta-val card-meta-accent">${discount}%</span>
+                </span>` : ''}
+            </div>
+            ${autoRelist}
         </div>
         <button class="gift-card-rent-btn" tabindex="-1"><span>${t('rent_btn')}</span></button>
     </div>`;
@@ -499,16 +519,15 @@ function saleCard(g, i) {
         <div class="gift-card-img-wrap">
             ${imgMarkup(g)}
             <div class="gift-card-placeholder" style="${g.image_url ? 'display:none' : ''}">${PLACEHOLDER_SVG}</div>
-            <div class="gift-card-img-overlay"></div>
             <div class="gift-card-img-glow"></div>
-            <div class="gift-card-ton-badge">◈ ${g.price_with_markup}</div>
-            <div class="gift-card-over">
-                <div class="gift-card-name">${esc(g.name)}</div>
-                ${cardAttrChips(g)}
-                <div class="gift-card-price-row">
-                    <span class="gift-card-ton">◈ ${g.price_with_markup}<span class="cur-label">${esc(cur)}</span></span>
-                    <span class="gift-card-uah">${uah}</span>
-                </div>
+            ${tgBtn(g.name)}
+        </div>
+        <div class="gift-card-body">
+            <div class="gift-card-name">${esc(g.name)}</div>
+            ${g.collection_name ? `<div class="gift-card-collection">${esc(g.collection_name)}</div>` : ''}
+            <div class="gift-card-price-row">
+                <span class="gift-card-ton">◈ ${g.price_with_markup}<span class="cur-label"> ${esc(cur)}</span></span>
+                <span class="gift-card-uah">≈ ${uah} ₴</span>
             </div>
         </div>
         <button class="gift-card-rent-btn" tabindex="-1"><span>${t('buy_btn')}</span></button>
@@ -710,24 +729,37 @@ function buildNftAttrs(item) {
         `<div class="nft-attr-chip"><span class="attr-key">${esc(k)}</span><span class="attr-val">${esc(v)}</span></div>`
     ).join('');
 
-    const fragSlug = fragmentSlug(item.name);
+    const tgNft = tgNftLink(item.name);
+    const tgNftA = tgNft
+        ? `<a class="nft-fragment-link nft-tg-link" href="${esc(tgNft)}" target="_blank" rel="noopener">
+               ${TG_ICON} Telegram NFT
+           </a>`
+        : '';
     const fragLink = item.nft_address
         ? `<a class="nft-fragment-link" href="https://tonscan.org/nft/${esc(item.nft_address)}" target="_blank" rel="noopener">
                <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
                    <path d="M7 3H3a1 1 0 00-1 1v9a1 1 0 001 1h9a1 1 0 001-1V9"/><path d="M10 2h4v4"/><path d="M14 2L8 8"/>
                </svg>
-               ${t('view_on_fragment')}
+               TONScan
            </a>`
         : '';
 
-    container.innerHTML = chips + fragLink;
+    container.innerHTML = chips + tgNftA + fragLink;
     container.style.display = (chips || fragLink) ? '' : 'none';
 }
 
 function fragmentSlug(name) {
     if (!name || !name.includes('#')) return null;
-    const [namePart, numPart] = name.split('#');
+    const [namePart] = name.split('#');
     return namePart.trim().toLowerCase().replace(/\s+/g, '').replace(/-/g, '');
+}
+
+function tgNftLink(name) {
+    if (!name || !name.includes('#')) return null;
+    const [namePart, numPart] = name.split('#');
+    const slug = namePart.trim().toLowerCase().replace(/\s+/g, '');
+    const num  = numPart.trim();
+    return `https://t.me/nft/${slug}-${num}`;
 }
 
 function closeModal() {
@@ -1548,9 +1580,9 @@ function handleProfileLink(kind) {
 function shareApp() {
     const link = window.GM_SHARE_URL || '';
     if (link && tg?.openTelegramLink) {
-        tg.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent('Gifts Market — NFT')}`);
+        tg.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent('Asset Market — NFT')}`);
     } else if (navigator.share) {
-        navigator.share({ title: 'Gifts Market', text: 'NFT gifts rental & sale on TON' }).catch(() => {});
+        navigator.share({ title: 'Asset Market', text: 'NFT gifts rental & sale on TON' }).catch(() => {});
     } else {
         notify(t('soon'), 'info');
     }
