@@ -111,6 +111,15 @@ def _translate_mrkt_error(exc: MarketAppError) -> str:
     """Map common MRKT upstream errors to friendly Ukrainian messages."""
     text = (str(exc.detail) or "").lower()
 
+    # ── MarketApp onboarding requirement ──────────────────────────────────
+    if "rent any nft manually" in text or "same wallet" in text or "get api toke" in text:
+        return (
+            "Потрібне одноразове налаштування MarketApp: "
+            "зайдіть на marketapp.ws, підключіть той самий TON-гаманець, "
+            "яким реєструвалися для отримання API-ключа, і вручну орендуйте "
+            "будь-який NFT через їх сайт. Після цього API-оренда запрацює."
+        )
+
     if exc.status in (401, 403):
         return "Сервіс тимчасово недоступний (помилка авторизації MarketApp). Спробуйте пізніше."
     if exc.status == 404:
@@ -118,7 +127,6 @@ def _translate_mrkt_error(exc: MarketAppError) -> str:
     if exc.status == 429:
         return "MarketApp обмежує запити. Спробуйте через 10–20 секунд."
 
-    # Heuristic mapping for 4xx with a JSON body
     if "price" in text and ("change" in text or "mismatch" in text or "drift" in text):
         return "Ціна на MarketApp щойно змінилась — оновіть каталог і спробуйте знову."
     if "not available" in text or "unavailable" in text or "sold" in text or "rented" in text:
@@ -128,6 +136,5 @@ def _translate_mrkt_error(exc: MarketAppError) -> str:
     if "rate" in text and "limit" in text:
         return "Забагато запитів. Спробуйте за кілька секунд."
 
-    # Generic but useful fallback — show first 120 chars of upstream detail
-    detail_short = str(exc.detail)[:120]
+    detail_short = str(exc.detail)[:180]
     return f"MarketApp повернув помилку: {detail_short}"

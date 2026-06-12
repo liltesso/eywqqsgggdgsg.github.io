@@ -1,13 +1,12 @@
 """Public catalog: rental & sale gift lists (cached, marked-up)."""
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, Query
 
 from ..cache import catalog_cache
 from ..deps import get_marketapp
 from ..marketapp import (
     MarketAppClient,
-    MarketAppError,
     normalize_rent_item,
     normalize_sale_item,
 )
@@ -42,16 +41,13 @@ async def list_rent_gifts(
     if (cached := catalog_cache.get(cache_key)) is not None:
         return cached
 
-    try:
-        data = await mrkt.rent_gifts(
-            cursor=cursor,
-            sort_by=RENT_SORT.get(sort, "recently_touch"),
-            model=model,
-            symbol=symbol,
-            backdrop=backdrop,
-        )
-    except MarketAppError as e:
-        raise HTTPException(status_code=502, detail=f"MarketApp error: {e.detail}")
+    data = await mrkt.rent_gifts(
+        cursor=cursor,
+        sort_by=RENT_SORT.get(sort, "recently_touch"),
+        model=model,
+        symbol=symbol,
+        backdrop=backdrop,
+    )
 
     items = []
     for raw in data.get("items", []):
@@ -81,18 +77,15 @@ async def list_sale_gifts(
     if (cached := catalog_cache.get(cache_key)) is not None:
         return cached
 
-    try:
-        data = await mrkt.gifts_on_sale(
-            cursor=cursor,
-            sort_by=SALE_SORT.get(sort, "min_bid_asc"),
-            model=model,
-            symbol=symbol,
-            backdrop=backdrop,
-            min_price=min_price,
-            max_price=max_price,
-        )
-    except MarketAppError as e:
-        raise HTTPException(status_code=502, detail=f"MarketApp error: {e.detail}")
+    data = await mrkt.gifts_on_sale(
+        cursor=cursor,
+        sort_by=SALE_SORT.get(sort, "min_bid_asc"),
+        model=model,
+        symbol=symbol,
+        backdrop=backdrop,
+        min_price=min_price,
+        max_price=max_price,
+    )
 
     items = []
     for raw in data.get("items", []):

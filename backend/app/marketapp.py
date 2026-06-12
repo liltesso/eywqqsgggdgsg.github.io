@@ -166,6 +166,19 @@ def attrs_to_dict(attributes: list[dict] | None) -> dict[str, Any]:
     return out
 
 
+def _best_image(item: dict, name: str) -> str | None:
+    """Try every known MRKT image field before falling back to Fragment CDN slug."""
+    return (
+        item.get("nft_image")
+        or item.get("nft_image_url")
+        or item.get("image")
+        or item.get("image_url")
+        or item.get("preview")
+        or item.get("thumbnail")
+        or slugify_gift_image(name)
+    )
+
+
 def normalize_rent_item(item: dict) -> dict:
     """MRKT RentItem -> Mini App gift (prices in TON, durations in days)."""
     ppd_nano = item.get("price_per_day") or "0"
@@ -175,12 +188,18 @@ def normalize_rent_item(item: dict) -> dict:
         ppd_ton = 0.0
     min_s = int(item.get("min_duration") or SECONDS_PER_DAY)
     max_s = int(item.get("max_duration") or SECONDS_PER_DAY)
-    name = item.get("nft_name", "")
+    name = item.get("nft_name") or item.get("name") or ""
+    attrs = attrs_to_dict(item.get("attributes"))
     return {
         "nft_address": item.get("nft_address"),
         "name": name,
-        "image_url": slugify_gift_image(name),
-        "attributes": attrs_to_dict(item.get("attributes")),
+        "image_url": _best_image(item, name),
+        "attributes": attrs,
+        "collection_address": item.get("collection_address"),
+        "collection_name": attrs.get("collection") or item.get("collection_name"),
+        "model":    attrs.get("model"),
+        "backdrop": attrs.get("backdrop"),
+        "symbol":   attrs.get("symbol"),
         "min_duration_days": max(1, min_s // SECONDS_PER_DAY),
         "max_duration_days": max(1, max_s // SECONDS_PER_DAY),
         "price_per_day_ton": round(ppd_ton, 4),
@@ -200,13 +219,18 @@ def normalize_sale_item(item: dict) -> dict:
             price = float(bid_nano)
         except (TypeError, ValueError):
             price = 0.0
-    name = item.get("name", "")
+    name = item.get("name") or item.get("nft_name") or ""
+    attrs = attrs_to_dict(item.get("attributes"))
     return {
-        "nft_address": item.get("address"),
+        "nft_address": item.get("address") or item.get("nft_address"),
         "name": name,
-        "image_url": slugify_gift_image(name),
-        "attributes": attrs_to_dict(item.get("attributes")),
+        "image_url": _best_image(item, name),
+        "attributes": attrs,
         "collection_address": item.get("collection_address"),
+        "collection_name": attrs.get("collection") or item.get("collection_name"),
+        "model":    attrs.get("model"),
+        "backdrop": attrs.get("backdrop"),
+        "symbol":   attrs.get("symbol"),
         "price": round(price, 4),
         "price_nano": str(bid_nano),
         "currency": currency,
