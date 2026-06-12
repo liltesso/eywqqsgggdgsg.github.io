@@ -22,7 +22,7 @@ import sys
 from app.config import settings
 from app.telegram import set_chat_menu_button, set_webhook
 
-MINI_APP_URL = "https://eywqqsgggdgsg.github.io/rent.html"
+MINI_APP_URL = "https://l-anonim-cite-mpf-github-io.vercel.app/"
 
 
 async def main() -> None:
