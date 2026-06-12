@@ -92,14 +92,11 @@ async def rent_checkout(
     await db.refresh(order)
 
     if req.method == "tonconnect":
-        try:
-            sendtx = await mrkt.rent_pay(
-                req.nft_address,
-                duration_seconds=days * SECONDS_PER_DAY,
-                price_per_day_nano=gift["price_per_day_nano"],
-            )
-        except MarketAppError as e:
-            raise HTTPException(status_code=502, detail=f"MarketApp error: {e.detail}")
+        sendtx = await mrkt.rent_pay(
+            req.nft_address,
+            duration_seconds=days * SECONDS_PER_DAY,
+            price_per_day_nano=gift["price_per_day_nano"],
+        )
         valid_until, messages = _tx_from_sendtx(sendtx)
         if (mm := markup_message(provider_total)):
             messages.append(mm)
@@ -230,12 +227,9 @@ async def sale_checkout(
     await db.refresh(order)
 
     if req.method == "tonconnect":
-        try:
-            sendtx = await mrkt.buy_nft(
-                [{"nft_address": req.nft_address, "price": provider_price, "currency": currency}]
-            )
-        except MarketAppError as e:
-            raise HTTPException(status_code=502, detail=f"MarketApp error: {e.detail}")
+        sendtx = await mrkt.buy_nft(
+            [{"nft_address": req.nft_address, "price": provider_price, "currency": currency}]
+        )
         valid_until, messages = _tx_from_sendtx(sendtx)
         if currency == "TON" and (mm := markup_message(provider_price)):
             messages.append(mm)

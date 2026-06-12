@@ -70,11 +70,13 @@ def install_exception_handlers(app: FastAPI) -> None:
 
     @app.exception_handler(MarketAppError)
     async def mrkt_exc(req: Request, exc: MarketAppError):
-        # 401/403 from upstream usually means a misconfigured backend, not a
-        # client problem. Surface as 502 so clients can retry the user action.
+        # Log the full upstream payload so the operator can see what MRKT
+        # said. The client only sees a friendly, translated message.
+        log.warning("MarketApp upstream %s: %r", exc.status, exc.detail)
+        friendly = _translate_mrkt_error(exc)
         return JSONResponse(
             status_code=502,
-            content=_envelope("marketapp_error", str(exc.detail)[:200], _rid(req)),
+            content=_envelope("marketapp_error", friendly, _rid(req)),
         )
 
     @app.exception_handler(TonAPIError)
@@ -103,3 +105,29 @@ def _http_code(status: int) -> str:
         422: "validation_error",
         429: "rate_limited",
     }.get(status, f"http_{status}")
+
+
+def _translate_mrkt_error(exc: MarketAppError) -> str:
+    """Map common MRKT upstream errors to friendly Ukrainian messages."""
+    text = (str(exc.detail) or "").lower()
+
+    if exc.status in (401, 403):
+        return "Сервіс тимчасово недоступний (помилка авторизації MarketApp). Спробуйте пізніше."
+    if exc.status == 404:
+        return "Цей подарунок більше недоступний — імовірно його щойно орендували / продали."
+    if exc.status == 429:
+        return "MarketApp обмежує запити. Спробуйте через 10–20 секунд."
+
+    # Heuristic mapping for 4xx with a JSON body
+    if "price" in text and ("change" in text or "mismatch" in text or "drift" in text):
+        return "Ціна на MarketApp щойно змінилась — оновіть каталог і спробуйте знову."
+    if "not available" in text or "unavailable" in text or "sold" in text or "rented" in text:
+        return "Подарунок щойно став недоступним. Поверніться до каталогу."
+    if "balance" in text or "insufficient" in text:
+        return "Недостатньо коштів для виконання операції."
+    if "rate" in text and "limit" in text:
+        return "Забагато запитів. Спробуйте за кілька секунд."
+
+    # Generic but useful fallback — show first 120 chars of upstream detail
+    detail_short = str(exc.detail)[:120]
+    return f"MarketApp повернув помилку: {detail_short}"

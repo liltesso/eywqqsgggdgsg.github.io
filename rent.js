@@ -304,19 +304,52 @@ function openModal(item) {
 function closeModal() {
     $('rental-modal').hidden = true;
     state.selected = null;
+    hideModalError();
+    setRentBtnLoading(false);
     if (tg) tg.BackButton.hide();
+}
+
+function showModalError(title, desc) {
+    const box = $('modal-error');
+    if (!box) return;
+    $('modal-error-title').textContent = title || 'Не вдалося оформити';
+    $('modal-error-desc').textContent = desc || '';
+    box.hidden = false;
+    // Re-trigger shake animation if shown again
+    box.style.animation = 'none';
+    void box.offsetWidth;
+    box.style.animation = '';
+}
+
+function hideModalError() {
+    const box = $('modal-error');
+    if (box) box.hidden = true;
+}
+
+function setRentBtnLoading(on, text) {
+    const btn = $('rent-btn');
+    if (!btn) return;
+    btn.disabled = !!on;
+    btn.classList.toggle('loading', !!on);
+    if (text) $('rent-btn-text').textContent = text;
 }
 
 function refreshTotals() {
     const g = state.selected;
     if (!g) return;
 
+    const sec = document.querySelector('.total-section');
+    if (sec) {
+        sec.classList.remove('bump');
+        void sec.offsetWidth;
+        sec.classList.add('bump');
+    }
+
     if (state.mode === 'rent') {
         const days = state.duration;
         let total = g.price_per_day_ton * days;
         if (days > 1 && g.discount_per_day) total *= (1 - g.discount_per_day);
         total = Math.round(total * 1000) / 1000;
-        const stars = g.price_per_day_stars * days;
         $('duration-display').textContent = `${days} ${pluralDays(days)}`;
         $('total-ton').textContent = `💎 ${total} TON`;
         $('total-stars').textContent = `≈ ${tonToUah(total)}`;
@@ -347,9 +380,9 @@ async function checkout() {
     if (!g) return;
 
     const btn = $('rent-btn');
-    const original = $('rent-btn-text').textContent;
-    btn.disabled = true;
-    $('rent-btn-text').textContent = 'Обробка…';
+    const original = state.mode === 'rent' ? 'Орендувати' : 'Купити';
+    hideModalError();
+    setRentBtnLoading(true, 'Створюємо замовлення…');
     if (tg) tg.HapticFeedback?.impactOccurred('medium');
 
     try {
@@ -365,10 +398,36 @@ async function checkout() {
             await payWithTon(resp, g, btn, original);
         }
     } catch (e) {
-        console.error(e);
-        resetBtn(btn, original);
-        notify(e.message || 'Сталася помилка', 'error');
+        console.error('Checkout failed:', e);
+        setRentBtnLoading(false, original);
+        showCheckoutError(e);
+        if (tg) tg.HapticFeedback?.notificationOccurred('error');
     }
+}
+
+function showCheckoutError(e) {
+    const status = e.status || 0;
+    const msg = e.message || 'Сталася невідома помилка';
+    let title = 'Не вдалося оформити';
+    let desc  = msg;
+
+    if (status === 401 || /init data|telegram/i.test(msg)) {
+        title = 'Потрібен Telegram';
+        desc  = 'Відкрийте Mini App через бота — без Telegram авторизації оформити неможливо.';
+    } else if (status === 404 || /no longer|unavailable|недост/i.test(msg)) {
+        title = 'Подарунок щойно став недоступним';
+        desc  = 'Імовірно його вже орендували. Поверніться до каталогу і оновіть список.';
+    } else if (status === 429 || /rate|обмежує/i.test(msg)) {
+        title = 'Забагато запитів';
+        desc  = 'Зачекайте 10-20 секунд і спробуйте знову.';
+    } else if (status === 502 || /marketapp|upstream/i.test(msg)) {
+        title = 'Помилка MarketApp';
+        desc  = msg;
+    } else if (/fetch|network|backend_url/i.test(msg)) {
+        title = 'Немає зв\'язку з бекендом';
+        desc  = 'Перевірте, що ngrok-тунель запущено і BACKEND_URL у rent.html актуальний.';
+    }
+    showModalError(title, desc);
 }
 
 function showTopupHint(show) {
@@ -382,19 +441,20 @@ function showTopupHint(show) {
 
 async function payWithTon(resp, g, btn, original) {
     if (!tonConnectUI) {
-        resetBtn(btn, original);
+        setRentBtnLoading(false, original);
         showTopupHint(true);
-        notify('Підключіть TON-гаманець', 'error');
+        showModalError('Підключіть TON-гаманець', 'TonConnect не ініціалізувався — оновіть сторінку.');
         return;
     }
     if (!tonConnectUI.connected) {
-        resetBtn(btn, original);
+        setRentBtnLoading(false, original);
         showTopupHint(true);
+        showModalError('Гаманець не підключено', 'Натисніть «Підключити гаманець» вгорі сторінки, потім повторіть оплату.');
         await tonConnectUI.openModal();
-        notify('Підключіть гаманець і повторіть оплату');
         return;
     }
     showTopupHint(false);
+    setRentBtnLoading(true, 'Підпишіть транзакцію в гаманці…');
     let result;
     try {
         result = await tonConnectUI.sendTransaction({
@@ -407,12 +467,14 @@ async function payWithTon(resp, g, btn, original) {
             })),
         });
     } catch (e) {
-        resetBtn(btn, original);
-        if (!/reject|cancel/i.test(e?.message || '')) notify('Транзакцію не підтверджено', 'error');
+        setRentBtnLoading(false, original);
+        if (!/reject|cancel/i.test(e?.message || '')) {
+            showModalError('Транзакцію не підтверджено', e?.message || 'Гаманець відхилив підпис.');
+        }
         return;
     }
 
-    $('rent-btn-text').textContent = 'Підтвердження в мережі…';
+    setRentBtnLoading(true, 'Підтвердження в мережі TON…');
     const wallet = tonConnectUI.account?.address || null;
     try {
         await api(`/api/orders/${resp.order_id}/confirm`, {
@@ -427,8 +489,10 @@ async function payWithTon(resp, g, btn, original) {
         closeModal();
         showSuccess(g);
     } else {
-        resetBtn(btn, original);
-        notify('Транзакцію надіслано. Підтвердження в мережі ще триває — дивіться «Замовлення».', 'info');
+        setRentBtnLoading(false, original);
+        notify('Транзакцію надіслано. Дочекайтеся підтвердження в «Замовленнях».', 'info');
+        closeModal();
+        setTab('orders');
     }
 }
 
@@ -436,23 +500,23 @@ async function payWithStars(resp, g, btn, original) {
     if (tg && resp.invoice_link) {
         tg.openInvoice(resp.invoice_link, async (status) => {
             if (status === 'paid') {
-                $('rent-btn-text').textContent = 'Видача…';
+                setRentBtnLoading(true, 'Видача подарунка…');
                 const ok = await pollOrder(resp.order_id);
                 if (ok) {
                     closeModal();
                     showSuccess(g);
                 } else {
-                    resetBtn(btn, original);
+                    setRentBtnLoading(false, original);
                     notify('Оплату отримано — видача обробляється', 'info');
                 }
             } else {
-                resetBtn(btn, original);
-                if (status !== 'cancelled') notify('Оплата не пройшла', 'error');
+                setRentBtnLoading(false, original);
+                if (status !== 'cancelled') showModalError('Оплата не пройшла', 'Telegram повідомив про збій оплати Stars.');
             }
         });
     } else {
-        resetBtn(btn, original);
-        notify('Stars-оплата доступна лише всередині Telegram', 'error');
+        setRentBtnLoading(false, original);
+        showModalError('Stars недоступні', 'Stars-оплата доступна лише всередині Telegram Mini App.');
     }
 }
 
@@ -469,8 +533,7 @@ async function pollOrder(orderId, { tries = 30, intervalMs = 3000 } = {}) {
 }
 
 function resetBtn(btn, text) {
-    btn.disabled = false;
-    $('rent-btn-text').textContent = text;
+    setRentBtnLoading(false, text);
 }
 
 function showSuccess(g) {
@@ -639,6 +702,7 @@ $('rent-btn').addEventListener('click', checkout);
 $('success-btn').addEventListener('click', closeSuccess);
 $('load-more-btn').addEventListener('click', () => loadItems(false));
 $('wallet-action-btn').addEventListener('click', toggleWallet);
+$('modal-error-close')?.addEventListener('click', hideModalError);
 $('topup-copy-btn').addEventListener('click', () => {
     const addr = MERCHANT_WALLET;
     if (!addr) return;

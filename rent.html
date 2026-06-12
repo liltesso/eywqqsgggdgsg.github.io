@@ -223,7 +223,17 @@
             <button class="topup-copy-btn" id="topup-copy-btn">Скопіювати адресу</button>
         </div>
 
+        <div class="modal-error" id="modal-error" hidden>
+            <div class="modal-error-icon">⚠️</div>
+            <div class="modal-error-body">
+                <div class="modal-error-title" id="modal-error-title">Не вдалося оформити</div>
+                <div class="modal-error-desc" id="modal-error-desc"></div>
+            </div>
+            <button class="modal-error-close" id="modal-error-close" aria-label="Закрити">×</button>
+        </div>
+
         <button class="rent-btn" id="rent-btn">
+            <span class="rent-btn-spinner" id="rent-btn-spinner" aria-hidden="true"></span>
             <span id="rent-btn-text">Орендувати</span>
         </button>
 
