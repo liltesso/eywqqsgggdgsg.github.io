@@ -1755,16 +1755,47 @@ body {
     fill: url(#ua-grid);
 }
 .map-water-label {
-    fill: rgba(65,115,195,0.28);
+    fill: rgba(60,110,195,0.32);
     font-style: italic; font-weight: 600;
     font-family: var(--font-en); letter-spacing: 0.6px;
     pointer-events: none;
 }
 .map-region-label {
-    fill: rgba(150,175,225,0.34);
+    fill: rgba(150,175,225,0.36);
     font-weight: 700; font-family: var(--font-en);
     letter-spacing: 1.2px; text-transform: uppercase;
     pointer-events: none;
+}
+/* Oblast name labels */
+.map-oblast-labels text {
+    fill: rgba(158,188,245,0.46);
+    font-size: 7px;
+    font-family: var(--font-uk), var(--font-en), sans-serif;
+    font-weight: 600;
+    letter-spacing: 0.1px;
+    pointer-events: none;
+    text-anchor: middle;
+    dominant-baseline: middle;
+}
+/* Kyiv capital marker */
+.map-capital-ring {
+    fill: none;
+    stroke: #d4b84a;
+    stroke-width: 1.4;
+    opacity: 0.90;
+}
+.map-capital-dot {
+    fill: #d4b84a;
+    opacity: 0.95;
+    filter: drop-shadow(0 0 2px rgba(212,184,74,0.6));
+}
+.map-capital-label {
+    fill: rgba(212,184,74,0.86);
+    font-size: 7px;
+    font-weight: 700;
+    font-family: var(--font-uk), sans-serif;
+    pointer-events: none;
+    dominant-baseline: middle;
 }
 .map-compass { pointer-events: none; }
 
