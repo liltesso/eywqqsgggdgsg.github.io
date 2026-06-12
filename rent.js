@@ -313,6 +313,8 @@ function extractFilterOptions() {
 
 function renderSkeletons() {
     $('gifts-grid').innerHTML = Array(6).fill('<div class="gift-skeleton"></div>').join('');
+    const bar = $('catalog-stats-bar');
+    if (bar) bar.hidden = true;
 }
 
 function visibleItems() {
@@ -638,7 +640,7 @@ function refreshTotals() {
     const g = state.selected;
     if (!g) return;
 
-    const sec = document.querySelector('.total-section');
+    const sec = document.querySelector('.totals-box');
     if (sec) { sec.classList.remove('bump'); void sec.offsetWidth; sec.classList.add('bump'); }
 
     if (state.mode === 'rent') {
@@ -989,22 +991,22 @@ function showThreatPopup(o) {
     const heading = o.heading_deg != null ? `${o.heading_deg}°` : null;
     const statusLabel = o.status === 'eliminated' ? '💥 Збито' : o.status === 'lost' ? '? Втрачено' : '🔴 Активний';
 
-    $('map-threat-popup-icon').innerHTML = icon;
-    $('map-threat-popup-title').textContent = o.title || kindName;
-    $('map-threat-popup-route').innerHTML =
+    $('threat-popup-icon').innerHTML = icon;
+    $('threat-popup-name').textContent = o.title || kindName;
+    $('threat-popup-route').innerHTML =
         `<span>${esc(fromZone)}</span><span style="opacity:0.5">→</span><span>${esc(toCity)}</span>`;
-    $('map-threat-popup-meta').innerHTML = [
+    $('threat-popup-tags').innerHTML = [
         `<span class="popup-tag popup-tag-speed">${speed} км/г</span>`,
         `<span class="popup-tag popup-tag-status">${statusLabel}</span>`,
         heading ? `<span class="popup-tag popup-tag-heading">↗ ${esc(heading)}</span>` : '',
     ].join('');
 
-    $('map-threat-popup').hidden = false;
+    $('threat-popup').hidden = false;
     if (tg) tg.HapticFeedback?.impactOccurred('light');
 }
 
-$('map-threat-popup-close')?.addEventListener('click', () => {
-    $('map-threat-popup').hidden = true;
+$('threat-popup-close')?.addEventListener('click', () => {
+    $('threat-popup').hidden = true;
 });
 
 async function loadCities() {
@@ -1084,7 +1086,7 @@ function renderAlertsMap(current) {
             : '';
         return `<g class="map-threat" data-tidx="${idx}">
             ${trail}
-            <circle class="map-threat-glow" cx="${x}" cy="${y}" r="12" fill="url(#threatGlow)"/>
+            <circle class="map-threat-glow" cx="${x}" cy="${y}" r="12" fill="url(#tGlow)"/>
             <circle class="map-threat-core" cx="${x}" cy="${y}" r="4"/>
         </g>`;
     }).join('');
@@ -1112,9 +1114,9 @@ function renderAlertsStats(current, attacksResp) {
         { num: lastAttack.official_shot_total || 0, label: lang === 'en' ? 'Shot down' : 'Збито', cls: 'good' },
     ];
     stats.innerHTML = items.map(i => `
-        <div class="alerts-stat-card">
-            <div class="alerts-stat-num ${i.cls}">${i.num}</div>
-            <div class="alerts-stat-label">${esc(i.label)}</div>
+        <div class="stat-card">
+            <div class="stat-num ${i.cls}">${i.num}</div>
+            <div class="stat-label">${esc(i.label)}</div>
         </div>`).join('');
 }
 
@@ -1137,18 +1139,18 @@ function renderThreatsList(current) {
         const toCity = citiesCache?.[o.to_city]?.ua || o.to_city || '?';
         const speed = o.speed_kmh || meta.speed;
         return `<div class="threat-card active-threat">
-            <div class="threat-icon-wrap ${cls}">${icon}</div>
+            <div class="threat-icon ${cls}">${icon}</div>
             <div class="threat-info">
-                <div class="threat-title">${esc(o.title || kindName)}</div>
-                <div class="threat-meta">
+                <div class="threat-name">${esc(o.title || kindName)}</div>
+                <div class="threat-route">
                     <span>${esc(fromZone)}</span>
-                    <span class="threat-meta-arrow">→</span>
+                    <span class="threat-route-arrow">→</span>
                     <span>${esc(toCity)}</span>
                 </div>
             </div>
-            <div>
-                <div class="threat-speed">${speed} <span style="opacity:0.6">км/г</span></div>
-                <div class="threat-speed-label">${esc(kindName.split(' ')[0])}</div>
+            <div class="threat-right">
+                <div class="threat-speed">${speed} км/г</div>
+                <div class="threat-kind">${esc(kindName.split(' ')[0])}</div>
             </div>
         </div>`;
     }).join('');
@@ -1166,10 +1168,10 @@ function renderRecentAttacks(attacksResp) {
         const dateStr = d.toLocaleDateString(lang === 'en' ? 'en-GB' : 'uk-UA', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
         return `<div class="attack-card">
             <div class="attack-date">${esc(dateStr)}</div>
-            <div class="attack-stats-mini">
-                <span class="drones-num">◈ ${a.total_drones || 0}</span>
-                <span class="missiles-num">⚡ ${a.total_missiles || 0}</span>
-                <span style="color:var(--green)">✓ ${a.official_shot_total || 0}</span>
+            <div class="attack-stats">
+                <span class="drones">◈ ${a.total_drones || 0}</span>
+                <span class="missiles">⚡ ${a.total_missiles || 0}</span>
+                <span class="shot">✓ ${a.official_shot_total || 0}</span>
             </div>
         </div>`;
     }).join('');
@@ -1324,9 +1326,9 @@ function setTab(tab) {
 function setMode(mode) {
     state.mode = mode;
     state.sort = mode === 'rent' ? 'popular' : 'price_asc';
-    $$('.r-tabs [data-mode]').forEach(t => t.classList.toggle('active', t.dataset.mode === mode));
+    $$('.r-mode-tabs [data-mode]').forEach(tab => tab.classList.toggle('active', tab.dataset.mode === mode));
     $$('.rent-only').forEach(e => e.style.display = mode === 'rent' ? '' : 'none');
-    $$('.filter-chip').forEach(c => c.classList.toggle('active', c.dataset.sort === state.sort));
+    $$('.sort-chip').forEach(c => c.classList.toggle('active', c.dataset.sort === state.sort));
     loadItems(true);
 }
 
@@ -1360,12 +1362,12 @@ $('topup-copy-btn').addEventListener('click', () => {
     });
 });
 
-$$('.r-tabs [data-mode]').forEach(tab =>
+$$('.r-mode-tabs [data-mode]').forEach(tab =>
     tab.addEventListener('click', () => setMode(tab.dataset.mode)));
 
-$$('.filter-chip').forEach(chip =>
+$$('.sort-chip').forEach(chip =>
     chip.addEventListener('click', () => {
-        $$('.filter-chip').forEach(c => c.classList.remove('active'));
+        $$('.sort-chip').forEach(c => c.classList.remove('active'));
         chip.classList.add('active');
         state.sort = chip.dataset.sort;
         loadItems(true);

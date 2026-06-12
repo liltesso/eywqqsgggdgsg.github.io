@@ -3,37 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <meta name="theme-color" content="#080808">
+    <meta name="theme-color" content="#060608">
     <title>Gifts Market</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="rent.css">
 
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://unpkg.com/@tonconnect/ui@2/dist/tonconnect-ui.min.js"></script>
     <script>
-        window.BACKEND_URL      = window.BACKEND_URL      || 'https://robin-jeep-pantomime.ngrok-free.dev';
-        window.TONCONNECT_MANIFEST = window.TONCONNECT_MANIFEST
-            || 'https://l-anonim-cite-mpf-github-io.vercel.app/tonconnect-manifest.json';
-        window.TON_TO_UAH    = window.TON_TO_UAH    || 180;
-        window.MERCHANT_WALLET = window.MERCHANT_WALLET || 'UQBXSL_HkAPI8HFQ9tfsuQaZodv_GF7XYJBGvc_axpyffBo-';
+        window.BACKEND_URL        = window.BACKEND_URL        || 'https://robin-jeep-pantomime.ngrok-free.dev';
+        window.TONCONNECT_MANIFEST = window.TONCONNECT_MANIFEST || 'https://l-anonim-cite-mpf-github-io.vercel.app/tonconnect-manifest.json';
+        window.TON_TO_UAH         = window.TON_TO_UAH         || 180;
+        window.MERCHANT_WALLET    = window.MERCHANT_WALLET    || 'UQBXSL_HkAPI8HFQ9tfsuQaZodv_GF7XYJBGvc_axpyffBo-';
     </script>
 </head>
 <body data-tab="catalog">
 
-<!-- ── ALERTS MAP (Карта тривог) ── -->
+<!-- ══════════════════ ALERTS / MAP ══════════════════ -->
 <section class="view hidden" data-view="alerts">
-    <header class="r-header simple" id="alerts-header">
-        <div class="alerts-status" id="alerts-status">
-            <div class="alerts-status-dot" id="alerts-status-dot"></div>
-            <div class="alerts-status-text">
-                <div class="alerts-status-title" id="alerts-status-title" data-i18n="alerts_calm">Тихо</div>
-                <div class="alerts-status-sub" id="alerts-status-sub" data-i18n="alerts_no_threats">Активних загроз не зафіксовано</div>
+
+    <header class="alerts-hdr" id="alerts-header">
+        <div class="alerts-status-banner" id="alerts-status">
+            <div class="status-dot" id="status-dot"></div>
+            <div class="status-text">
+                <div class="status-title" id="alerts-status-title" data-i18n="alerts_calm">Тихо</div>
+                <div class="status-sub"   id="alerts-status-sub"   data-i18n="alerts_no_threats">Активних загроз не зафіксовано</div>
             </div>
-            <button class="alerts-refresh-btn" id="alerts-refresh-btn" aria-label="Оновити">
-                <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <button class="icon-btn" id="alerts-refresh-btn" aria-label="Оновити">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M3 12a9 9 0 019-9 9 9 0 016.4 2.6L21 8"/><path d="M21 3v5h-5"/>
                     <path d="M21 12a9 9 0 01-9 9 9 9 0 01-6.4-2.6L3 16"/><path d="M3 21v-5h5"/>
                 </svg>
@@ -41,116 +41,161 @@
         </div>
     </header>
 
-    <main class="alerts-main">
-        <!-- Map -->
-        <div class="alerts-map-wrap">
-            <div class="alerts-map-glow"></div>
-            <svg class="alerts-map" id="alerts-map" viewBox="0 0 1000 660" preserveAspectRatio="xMidYMid meet">
+    <main class="alerts-body">
+
+        <!-- MAP -->
+        <div class="map-container" id="map-container">
+            <div class="map-bg-glow"></div>
+
+            <svg id="alerts-map" class="alerts-map" viewBox="0 0 1000 660"
+                 preserveAspectRatio="xMidYMid meet" role="img" aria-label="Карта повітряних тривог України">
                 <defs>
-                    <radialGradient id="threatGlow" cx="50%" cy="50%" r="50%">
-                        <stop offset="0%" stop-color="#ff2a2e" stop-opacity="0.85"/>
+                    <!-- Threat glow -->
+                    <radialGradient id="tGlow" cx="50%" cy="50%" r="50%">
+                        <stop offset="0%"   stop-color="#ff2a2e" stop-opacity="0.9"/>
                         <stop offset="100%" stop-color="#ff2a2e" stop-opacity="0"/>
                     </radialGradient>
-                    <filter id="mapShadow" x="-20%" y="-20%" width="140%" height="140%">
-                        <feDropShadow dx="0" dy="0" stdDeviation="3" flood-color="#d41115" flood-opacity="0.35"/>
+                    <!-- Ukraine fill gradient -->
+                    <linearGradient id="uaFill" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%"   stop-color="#1a2540" stop-opacity="0.7"/>
+                        <stop offset="100%" stop-color="#111828" stop-opacity="0.5"/>
+                    </linearGradient>
+                    <!-- Border glow filter -->
+                    <filter id="borderGlow" x="-5%" y="-5%" width="110%" height="110%">
+                        <feGaussianBlur stdDeviation="2.5" result="blur"/>
+                        <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
                     </filter>
+                    <!-- Threat drop-shadow -->
+                    <filter id="threatShadow" x="-50%" y="-50%" width="200%" height="200%">
+                        <feDropShadow dx="0" dy="0" stdDeviation="4" flood-color="#ff2a2e" flood-opacity="0.8"/>
+                    </filter>
+                    <!-- Sea / outside Ukraine overlay -->
+                    <clipPath id="uaClip">
+                        <path d="M 130,54 L 270,47 L 378,47 L 432,23 L 568,8 L 622,16 L 649,54 L 730,93 L 865,194 L 946,272 L 984,365 L 984,388 L 919,419 L 838,427 L 784,466 L 746,497 L 714,489 L 692,520 L 730,567 L 703,606 L 649,629 L 568,621 L 524,598 L 541,544 L 514,466 L 470,474 L 416,466 L 378,489 L 335,536 L 324,505 L 314,388 L 324,350 L 270,311 L 249,303 L 189,311 L 135,272 L 108,210 L 81,163 L 54,140 L 38,109 L 16,85 L 54,47 L 108,47 Z"/>
+                    </clipPath>
                 </defs>
-                <!-- Ukraine outline — simplified geographic coordinates -->
-                <path id="ua-outline" d="M 130,54 L 270,47 L 378,47 L 432,23 L 568,8 L 622,16 L 649,54 L 730,93 L 865,194 L 946,272 L 984,365 L 984,388 L 919,419 L 838,427 L 784,466 L 746,497 L 714,489 L 692,520 L 730,567 L 703,606 L 649,629 L 568,621 L 524,598 L 541,544 L 514,466 L 470,474 L 416,466 L 378,489 L 335,536 L 324,505 L 314,388 L 324,350 L 270,311 L 249,303 L 189,311 L 135,272 L 108,210 L 81,163 L 54,140 L 38,109 L 16,85 L 54,47 L 108,47 Z"
-                      fill="rgba(255,255,255,0.028)" stroke="rgba(255,255,255,0.22)" stroke-width="1.2" filter="url(#mapShadow)"/>
-                <!-- City reference dots -->
+
+                <!-- Sea / outside area (dark) -->
+                <rect width="1000" height="660" fill="#08090f" rx="0"/>
+
+                <!-- Ukraine filled body -->
+                <path class="ua-body" d="M 130,54 L 270,47 L 378,47 L 432,23 L 568,8 L 622,16 L 649,54 L 730,93 L 865,194 L 946,272 L 984,365 L 984,388 L 919,419 L 838,427 L 784,466 L 746,497 L 714,489 L 692,520 L 730,567 L 703,606 L 649,629 L 568,621 L 524,598 L 541,544 L 514,466 L 470,474 L 416,466 L 378,489 L 335,536 L 324,505 L 314,388 L 324,350 L 270,311 L 249,303 L 189,311 L 135,272 L 108,210 L 81,163 L 54,140 L 38,109 L 16,85 L 54,47 L 108,47 Z"
+                      fill="url(#uaFill)"/>
+
+                <!-- Dnipro river -->
+                <polyline class="map-river"
+                    points="595,31 568,109 514,194 486,233 465,163 486,233 514,272 568,311 649,311 703,311 708,358 676,388 622,411 576,448 568,466"/>
+
+                <!-- Ukraine border (glow + crisp) -->
+                <path class="ua-border-glow" d="M 130,54 L 270,47 L 378,47 L 432,23 L 568,8 L 622,16 L 649,54 L 730,93 L 865,194 L 946,272 L 984,365 L 984,388 L 919,419 L 838,427 L 784,466 L 746,497 L 714,489 L 692,520 L 730,567 L 703,606 L 649,629 L 568,621 L 524,598 L 541,544 L 514,466 L 470,474 L 416,466 L 378,489 L 335,536 L 324,505 L 314,388 L 324,350 L 270,311 L 249,303 L 189,311 L 135,272 L 108,210 L 81,163 L 54,140 L 38,109 L 16,85 L 54,47 L 108,47 Z"/>
+                <path class="ua-border" d="M 130,54 L 270,47 L 378,47 L 432,23 L 568,8 L 622,16 L 649,54 L 730,93 L 865,194 L 946,272 L 984,365 L 984,388 L 919,419 L 838,427 L 784,466 L 746,497 L 714,489 L 692,520 L 730,567 L 703,606 L 649,629 L 568,621 L 524,598 L 541,544 L 514,466 L 470,474 L 416,466 L 378,489 L 335,536 L 324,505 L 314,388 L 324,350 L 270,311 L 249,303 L 189,311 L 135,272 L 108,210 L 81,163 L 54,140 L 38,109 L 16,85 L 54,47 L 108,47 Z"/>
+
+                <!-- Cities -->
                 <g id="map-cities"></g>
-                <!-- Threat markers -->
+                <!-- Threats -->
                 <g id="map-threats"></g>
             </svg>
-            <div class="alerts-map-legend">
-                <span><i class="legend-dot" style="background:#ff2a2e"></i> <span data-i18n="legend_threat">Загроза</span></span>
-                <span><i class="legend-dot" style="background:#3b9eff"></i> <span data-i18n="legend_city">Місто</span></span>
+
+            <!-- Map overlay controls -->
+            <div class="map-legend">
+                <span><i class="ldot red"></i><span data-i18n="legend_threat">Загроза</span></span>
+                <span><i class="ldot blue"></i><span data-i18n="legend_city">Місто</span></span>
+                <span><i class="ldot river"></i><span>Дніпро</span></span>
             </div>
-            <button class="map-zoom-reset" id="map-zoom-reset" title="Скинути зум" aria-label="Скинути зум">
-                <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+            <button class="map-zoom-reset" id="map-zoom-reset" title="Скинути вид">
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
                     <path d="M3 12a9 9 0 019-9 9 9 0 016.4 2.6L21 8"/><path d="M21 3v5h-5"/>
                     <path d="M21 12a9 9 0 01-9 9 9 9 0 01-6.4-2.6L3 16"/><path d="M3 21v-5h5"/>
                 </svg>
             </button>
+            <div class="map-zoom-hint">Pinch / scroll для зуму</div>
+
             <!-- Threat detail popup -->
-            <div class="map-threat-popup" id="map-threat-popup" hidden>
-                <button class="map-threat-popup-close" id="map-threat-popup-close">×</button>
-                <div class="map-threat-popup-icon" id="map-threat-popup-icon"></div>
-                <div class="map-threat-popup-body">
-                    <div class="map-threat-popup-title" id="map-threat-popup-title"></div>
-                    <div class="map-threat-popup-route" id="map-threat-popup-route"></div>
-                    <div class="map-threat-popup-meta" id="map-threat-popup-meta"></div>
+            <div class="threat-popup" id="threat-popup" hidden>
+                <button class="threat-popup-close" id="threat-popup-close">×</button>
+                <div class="threat-popup-icon" id="threat-popup-icon"></div>
+                <div class="threat-popup-content">
+                    <div class="threat-popup-name"  id="threat-popup-name"></div>
+                    <div class="threat-popup-route" id="threat-popup-route"></div>
+                    <div class="threat-popup-tags"  id="threat-popup-tags"></div>
                 </div>
             </div>
         </div>
 
-        <!-- Stats strip -->
-        <div class="alerts-stats" id="alerts-stats"></div>
+        <!-- STATS STRIP -->
+        <div class="alerts-stats" id="alerts-stats">
+            <div class="stat-card skeleton-stat"></div>
+            <div class="stat-card skeleton-stat"></div>
+            <div class="stat-card skeleton-stat"></div>
+            <div class="stat-card skeleton-stat"></div>
+        </div>
 
-        <!-- Threats list -->
+        <!-- ACTIVE THREATS -->
         <div class="alerts-section">
-            <div class="alerts-section-title">
-                <span data-i18n="alerts_active">Активні загрози</span>
-                <span class="alerts-count-badge" id="alerts-count-badge">0</span>
+            <div class="section-hdr">
+                <span class="section-title" data-i18n="alerts_active">Активні загрози</span>
+                <span class="count-chip" id="alerts-count-badge">0</span>
             </div>
-            <div class="alerts-threats-list" id="alerts-threats-list">
-                <div class="alerts-empty" id="alerts-empty" data-i18n="alerts_no_threats_long">Активних загроз немає. Бережіть себе.</div>
+            <div class="threats-list" id="alerts-threats-list">
+                <div class="threat-skeleton"></div>
+                <div class="threat-skeleton"></div>
             </div>
         </div>
 
-        <!-- Recent attacks -->
+        <!-- RECENT ATTACKS -->
         <div class="alerts-section">
-            <div class="alerts-section-title">
-                <span data-i18n="alerts_recent">Останні атаки</span>
+            <div class="section-hdr">
+                <span class="section-title" data-i18n="alerts_recent">Останні атаки</span>
             </div>
-            <div class="alerts-attacks-list" id="alerts-attacks-list">
-                <div class="gift-skeleton wide"></div>
-                <div class="gift-skeleton wide"></div>
+            <div class="attacks-list" id="alerts-attacks-list">
+                <div class="attack-skeleton"></div>
+                <div class="attack-skeleton"></div>
             </div>
         </div>
 
-        <p class="alerts-disclaimer" data-i18n="alerts_disclaimer">
-            ⚠️ Дані mapa.ua наближені, оновлюються в реальному часі. Не використовуйте для прийняття рішень щодо безпеки — слідкуйте за офіційними джерелами.
-        </p>
+        <div class="alerts-disclaimer" data-i18n="alerts_disclaimer">
+            ⚠️ Дані mapa.ua наближені, оновлюються в реальному часі. Не використовуйте для прийняття рішень — слідкуйте за офіційними джерелами.
+        </div>
     </main>
 </section>
 
-<!-- ── CATALOG ── -->
+<!-- ══════════════════ CATALOG ══════════════════ -->
 <section class="view" data-view="catalog">
 
     <header class="r-header" id="catalog-header">
-        <div class="r-header-inner">
+        <div class="r-header-top">
             <div class="r-brand">
-                <span class="r-dot"></span>
-                <h1 class="r-title">Gifts <span class="accent">Market</span></h1>
+                <div class="r-brand-dot"></div>
+                <h1 class="r-brand-name">Gifts <span class="accent">Market</span></h1>
             </div>
             <div id="ton-connect" class="ton-connect-slot"></div>
         </div>
 
         <div class="r-search-wrap">
-            <svg class="r-search-ic" viewBox="0 0 24 24" width="16" height="16" fill="none"
-                 stroke="currentColor" stroke-width="2" stroke-linecap="round">
+            <svg class="r-search-ic" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
                 <circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/>
             </svg>
             <input type="search" id="search-input" placeholder="…" autocomplete="off" data-i18n-ph="search">
+            <div class="search-shortcut">⌘K</div>
         </div>
 
-        <div class="r-tabs" role="tablist">
+        <div class="r-mode-tabs" role="tablist">
             <button class="r-tab active" data-mode="rent" role="tab" data-i18n="rent">Оренда</button>
             <button class="r-tab" data-mode="sale" role="tab" data-i18n="sale">Продаж</button>
         </div>
 
         <div class="r-filters-row">
-            <div class="r-filters" id="filters-bar" role="tablist">
-                <button class="filter-chip active" data-sort="popular" role="tab" data-i18n="popular">Популярні</button>
-                <button class="filter-chip" data-sort="price_asc" role="tab" data-i18n="cheaper">Дешевші</button>
-                <button class="filter-chip" data-sort="price_desc" role="tab" data-i18n="pricier">Дорожчі</button>
-                <button class="filter-chip rent-only" data-sort="duration" role="tab" data-i18n="longer">Довший термін</button>
+            <div class="r-sort-chips" id="filters-bar" role="tablist">
+                <button class="sort-chip active" data-sort="popular" role="tab" data-i18n="popular">Популярні</button>
+                <button class="sort-chip" data-sort="price_asc" role="tab" data-i18n="cheaper">Дешевші</button>
+                <button class="sort-chip" data-sort="price_desc" role="tab" data-i18n="pricier">Дорожчі</button>
+                <button class="sort-chip rent-only" data-sort="duration" role="tab" data-i18n="longer">Довший термін</button>
             </div>
-            <button class="filter-icon-btn" id="filter-btn" aria-label="Фільтри">
-                <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
-                    <line x1="4" y1="6" x2="20" y2="6"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="11" y1="18" x2="13" y2="18"/>
+            <button class="filter-toggle-btn" id="filter-btn" aria-label="Фільтри">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+                    <line x1="4" y1="6" x2="20" y2="6"/>
+                    <line x1="8" y1="12" x2="16" y2="12"/>
+                    <line x1="11" y1="18" x2="13" y2="18"/>
                 </svg>
                 <span class="filter-active-dot" id="filter-active-dot" hidden></span>
             </button>
@@ -159,22 +204,24 @@
 
     <div class="catalog-stats-bar" id="catalog-stats-bar" hidden></div>
 
-    <main class="r-grid" id="gifts-grid" aria-live="polite">
+    <main class="gifts-grid" id="gifts-grid" aria-live="polite">
         <div class="gift-skeleton"></div><div class="gift-skeleton"></div>
         <div class="gift-skeleton"></div><div class="gift-skeleton"></div>
         <div class="gift-skeleton"></div><div class="gift-skeleton"></div>
     </main>
 
-    <div class="r-load-more" id="load-more-container" style="display:none">
+    <div class="load-more-wrap" id="load-more-container" style="display:none">
         <button class="load-more-btn" id="load-more-btn" data-i18n="load_more">Завантажити ще</button>
     </div>
 </section>
 
-<!-- ── ORDERS ── -->
+<!-- ══════════════════ ORDERS ══════════════════ -->
 <section class="view hidden" data-view="orders">
     <header class="r-header simple">
-        <h1 class="r-title">Мої <span class="accent" data-i18n="orders">замовлення</span></h1>
-        <div class="r-tabs" role="tablist" id="orders-filter">
+        <div class="r-header-top" style="margin-bottom:14px">
+            <h1 class="r-brand-name">Мої <span class="accent" data-i18n="orders">замовлення</span></h1>
+        </div>
+        <div class="r-mode-tabs" role="tablist" id="orders-filter">
             <button class="r-tab active" data-kind="" role="tab" data-i18n="all">Усі</button>
             <button class="r-tab" data-kind="rent" role="tab" data-i18n="rent">Оренда</button>
             <button class="r-tab" data-kind="sale" role="tab" data-i18n="sale">Продаж</button>
@@ -187,136 +234,165 @@
     </main>
 </section>
 
-<!-- ── SETTINGS ── -->
+<!-- ══════════════════ SETTINGS ══════════════════ -->
 <section class="view hidden" data-view="settings">
     <header class="r-header simple">
-        <h1 class="r-title" data-i18n="profile">Профіль</h1>
+        <div class="r-header-top">
+            <h1 class="r-brand-name" data-i18n="profile">Профіль</h1>
+        </div>
     </header>
+    <main class="settings-body">
 
-    <main class="settings-list">
-        <div class="settings-card" id="user-card">
-            <div class="settings-avatar" id="user-avatar">?</div>
-            <div class="settings-user-info">
-                <div class="settings-user-name" id="user-name">—</div>
-                <div class="settings-user-uid" id="user-uid">—</div>
+        <div class="user-card" id="user-card">
+            <div class="user-avatar" id="user-avatar">?</div>
+            <div class="user-info">
+                <div class="user-name" id="user-name">—</div>
+                <div class="user-uid"  id="user-uid">—</div>
+            </div>
+            <div class="user-badge">TON</div>
+        </div>
+
+        <div class="settings-section">
+            <div class="settings-label" data-i18n="ton_wallet">TON-гаманець</div>
+            <div class="settings-row">
+                <span class="settings-row-label" data-i18n="ton_wallet">Гаманець</span>
+                <span class="settings-row-val" id="wallet-status">не підключено</span>
+            </div>
+            <button class="settings-action-btn" id="wallet-action-btn" data-i18n="connect_wallet">Підключити гаманець</button>
+        </div>
+
+        <div class="settings-section">
+            <div class="settings-label" data-i18n="language_label">Мова / Language</div>
+            <div class="lang-row">
+                <button class="lang-btn active" data-lang="uk">🇺🇦 Укр</button>
+                <button class="lang-btn" data-lang="en">🇬🇧 Eng</button>
+                <button class="lang-btn" data-lang="ru">🇷🇺 Рус</button>
             </div>
         </div>
 
-        <div class="settings-row">
-            <div class="settings-row-label" data-i18n="ton_wallet">TON-гаманець</div>
-            <div class="settings-row-value" id="wallet-status">не підключено</div>
+        <div class="settings-section">
+            <div class="settings-label" data-i18n="about">Про сервіс</div>
+            <div class="settings-row">
+                <span class="settings-row-label" data-i18n="network">Мережа</span>
+                <span class="settings-row-val" id="net-info">TON Mainnet</span>
+            </div>
+            <div class="settings-row">
+                <span class="settings-row-label" data-i18n="fee">Комісія</span>
+                <span class="settings-row-val" id="markup-info">~15%</span>
+            </div>
+            <div class="settings-row">
+                <span class="settings-row-label">Версія</span>
+                <span class="settings-row-val" style="color:var(--text-muted)">5.0.0</span>
+            </div>
         </div>
-        <button class="settings-btn" id="wallet-action-btn" data-i18n="connect_wallet">Підключити гаманець</button>
 
-        <div class="settings-section-title" data-i18n="language_label">Мова / Language</div>
-        <div class="settings-lang-row">
-            <button class="lang-btn active" data-lang="uk">🇺🇦 Укр</button>
-            <button class="lang-btn" data-lang="en">🇬🇧 Eng</button>
-            <button class="lang-btn" data-lang="ru">🇷🇺 Рус</button>
-        </div>
-
-        <div class="settings-section-title" data-i18n="about">Про сервіс</div>
-        <div class="settings-row info">
-            <div class="settings-row-label" data-i18n="network">Мережа</div>
-            <div class="settings-row-value" id="net-info">TON Mainnet</div>
-        </div>
-        <div class="settings-row info">
-            <div class="settings-row-label" data-i18n="fee">Комісія</div>
-            <div class="settings-row-value" id="markup-info">~15%</div>
-        </div>
     </main>
 </section>
 
-<!-- ── BOTTOM NAV ── -->
+<!-- ══════════════════ BOTTOM NAV ══════════════════ -->
 <nav class="bottom-nav" role="tablist">
-    <button class="nav-btn nav-alerts" data-tab="alerts" role="tab">
-        <span class="nav-alert-indicator" id="nav-alert-indicator" hidden></span>
-        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M6 8a6 6 0 0112 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10 21a2 2 0 004 0"/>
-        </svg>
-        <span data-i18n="alerts_tab">Тривоги</span>
+    <button class="nav-btn nav-alerts" data-tab="alerts" role="tab" aria-label="Тривоги">
+        <span class="nav-alert-dot" id="nav-alert-indicator" hidden></span>
+        <div class="nav-icon">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M6 8a6 6 0 0112 0c0 7 3 9 3 9H3s3-2 3-9"/>
+                <path d="M10 21a2 2 0 004 0"/>
+            </svg>
+        </div>
+        <span class="nav-label" data-i18n="alerts_tab">Тривоги</span>
     </button>
-    <button class="nav-btn active" data-tab="catalog" role="tab">
-        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
-            <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
-        </svg>
-        <span data-i18n="catalog">Каталог</span>
+    <button class="nav-btn active" data-tab="catalog" role="tab" aria-label="Каталог">
+        <div class="nav-icon">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="7" height="7" rx="1.5"/>
+                <rect x="14" y="3" width="7" height="7" rx="1.5"/>
+                <rect x="3" y="14" width="7" height="7" rx="1.5"/>
+                <rect x="14" y="14" width="7" height="7" rx="1.5"/>
+            </svg>
+        </div>
+        <span class="nav-label" data-i18n="catalog">Каталог</span>
     </button>
-    <button class="nav-btn" data-tab="orders" role="tab">
-        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
-        </svg>
-        <span data-i18n="orders">Замовлення</span>
+    <button class="nav-btn" data-tab="orders" role="tab" aria-label="Замовлення">
+        <div class="nav-icon">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 11l3 3L22 4"/>
+                <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
+            </svg>
+        </div>
+        <span class="nav-label" data-i18n="orders">Замовлення</span>
     </button>
-    <button class="nav-btn" data-tab="settings" role="tab">
-        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="12" cy="7" r="4"/><path d="M5 21v-1a7 7 0 0114 0v1"/>
-        </svg>
-        <span data-i18n="profile">Профіль</span>
+    <button class="nav-btn" data-tab="settings" role="tab" aria-label="Профіль">
+        <div class="nav-icon">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="7" r="4"/>
+                <path d="M5 21v-1a7 7 0 0114 0v1"/>
+            </svg>
+        </div>
+        <span class="nav-label" data-i18n="profile">Профіль</span>
     </button>
 </nav>
 
-<!-- ── FILTER SHEET ── -->
-<div class="modal-overlay" id="filter-sheet" hidden role="dialog" aria-modal="true">
-    <div class="modal-sheet">
-        <div class="modal-drag-handle"></div>
-        <div class="filter-sheet-hdr">
-            <h3 class="filter-sheet-title" data-i18n="filters">Фільтри</h3>
-            <button class="filter-reset-btn" id="filter-reset-btn" data-i18n="reset_all">Скинути</button>
+<!-- ══════════════════ FILTER SHEET ══════════════════ -->
+<div class="modal-overlay" id="filter-sheet" hidden role="dialog" aria-modal="true" aria-label="Фільтри">
+    <div class="bottom-sheet">
+        <div class="sheet-handle"></div>
+        <div class="sheet-hdr">
+            <h3 class="sheet-title" data-i18n="filters">Фільтри</h3>
+            <button class="sheet-reset-btn" id="filter-reset-btn" data-i18n="reset_all">Скинути</button>
         </div>
-        <div id="filter-sheet-body" class="filter-sheet-body"></div>
-        <button class="rent-btn" id="filter-apply-btn" style="margin-top:8px">
+        <div id="filter-sheet-body" class="filter-body"></div>
+        <button class="primary-btn" id="filter-apply-btn">
             <span data-i18n="apply_filters">Застосувати</span>
         </button>
     </div>
 </div>
 
-<!-- ── CHECKOUT SHEET ── -->
-<div class="modal-overlay" id="rental-modal" hidden role="dialog" aria-modal="true">
-    <div class="modal-sheet">
-        <div class="modal-drag-handle"></div>
+<!-- ══════════════════ CHECKOUT SHEET ══════════════════ -->
+<div class="modal-overlay" id="rental-modal" hidden role="dialog" aria-modal="true" aria-label="Оформлення">
+    <div class="bottom-sheet checkout-sheet">
+        <div class="sheet-handle"></div>
 
-        <div class="modal-gift-preview">
-            <div class="modal-img-wrap">
-                <img class="modal-gift-img" id="modal-img" src="" alt="" loading="lazy">
+        <!-- Gift preview row -->
+        <div class="checkout-preview">
+            <div class="checkout-img-wrap">
+                <img class="checkout-img" id="modal-img" src="" alt="" loading="lazy">
             </div>
-            <div class="modal-gift-info">
-                <h2 class="modal-gift-name" id="modal-name"></h2>
-                <div class="modal-gift-addr" id="modal-addr"></div>
-                <div class="modal-ppd">
-                    <span class="modal-ppd-stars" id="modal-ppd-stars"></span>
-                    <span class="modal-ppd-label" id="modal-ppd-label">/ день</span>
+            <div class="checkout-info">
+                <div class="checkout-name" id="modal-name"></div>
+                <div class="checkout-addr" id="modal-addr"></div>
+                <div class="checkout-price-tag">
+                    <span class="price-val" id="modal-ppd-stars"></span>
+                    <span class="price-unit" id="modal-ppd-label">/ день</span>
                 </div>
             </div>
         </div>
 
-        <!-- NFT attribute chips + link -->
+        <!-- NFT attribute chips -->
         <div class="nft-attrs" id="nft-attrs"></div>
+        <div class="sheet-divider"></div>
 
-        <div class="modal-divider"></div>
-
-        <div class="duration-section" id="duration-section">
-            <div class="duration-header">
+        <!-- Duration -->
+        <div class="duration-block" id="duration-section">
+            <div class="duration-top">
                 <span class="duration-label" data-i18n="rent_days">Термін оренди</span>
-                <span class="duration-value" id="duration-display">7 днів</span>
+                <span class="duration-val" id="duration-display">7 днів</span>
             </div>
-            <div class="slider-track-wrap">
-                <input type="range" class="duration-slider" id="duration-slider" min="1" max="30" value="7"
-                       aria-label="Термін оренди в днях">
+            <div class="slider-wrap">
+                <input type="range" class="dur-slider" id="duration-slider" min="1" max="30" value="7" aria-label="Термін оренди">
             </div>
-            <div class="duration-range-labels">
+            <div class="slider-labels">
                 <span id="duration-min-label">1 день</span>
                 <span id="duration-max-label">30 днів</span>
             </div>
         </div>
 
-        <div class="total-section">
-            <div class="total-row">
-                <span class="total-label" data-i18n="total">Разом</span>
-                <div class="total-amount-col">
-                    <span class="total-stars" id="total-ton"></span>
-                    <span class="total-ton" id="total-stars"></span>
+        <!-- Totals -->
+        <div class="totals-box">
+            <div class="totals-row">
+                <span class="totals-label" data-i18n="total">Разом</span>
+                <div class="totals-right">
+                    <span class="totals-main" id="total-ton"></span>
+                    <span class="totals-uah"  id="total-stars"></span>
                 </div>
             </div>
             <div class="discount-row" id="discount-row" style="display:none">
@@ -324,53 +400,59 @@
             </div>
         </div>
 
-        <div class="method-toggle">
+        <!-- Method -->
+        <div class="method-row">
             <button class="method-btn active" data-method="tonconnect">
-                <span class="method-ic">💎</span><span data-i18n="ton_payment">Оплата TON</span>
+                <span class="method-ic">◈</span>
+                <span data-i18n="ton_payment">Оплата TON</span>
             </button>
         </div>
 
+        <!-- Top-up hint -->
         <div class="topup-hint" id="topup-hint" style="display:none">
-            <div class="topup-hint-title" data-i18n="topup_title">💳 Як поповнити гаманець</div>
-            <div class="topup-hint-desc" data-i18n="topup_desc">Переведіть TON на адресу або купіть через Tonkeeper / @wallet</div>
-            <div class="topup-hint-addr" id="topup-addr"></div>
-            <button class="topup-copy-btn" id="topup-copy-btn" data-i18n="copy_addr">Скопіювати адресу</button>
+            <div class="topup-title" data-i18n="topup_title">💳 Як поповнити гаманець</div>
+            <div class="topup-desc"  data-i18n="topup_desc">Переведіть TON на адресу або купіть через Tonkeeper</div>
+            <div class="topup-addr"  id="topup-addr"></div>
+            <button class="topup-copy" id="topup-copy-btn" data-i18n="copy_addr">Скопіювати адресу</button>
         </div>
 
-        <div class="modal-error" id="modal-error" hidden>
-            <div class="modal-error-icon">⚠️</div>
-            <div class="modal-error-body">
-                <div class="modal-error-title" id="modal-error-title"></div>
-                <div class="modal-error-desc" id="modal-error-desc"></div>
+        <!-- Error -->
+        <div class="checkout-error" id="modal-error" hidden>
+            <div class="error-icon">⚠️</div>
+            <div class="error-body">
+                <div class="error-title" id="modal-error-title"></div>
+                <div class="error-desc"  id="modal-error-desc"></div>
             </div>
-            <button class="modal-error-close" id="modal-error-close" aria-label="Закрити">×</button>
+            <button class="error-close" id="modal-error-close" aria-label="Закрити">×</button>
         </div>
 
-        <button class="rent-btn" id="rent-btn">
-            <span class="rent-btn-spinner" id="rent-btn-spinner" aria-hidden="true"></span>
+        <!-- CTA -->
+        <button class="primary-btn checkout-cta" id="rent-btn">
+            <span class="btn-spinner" id="rent-btn-spinner" aria-hidden="true"></span>
             <span id="rent-btn-text">Орендувати</span>
         </button>
 
-        <p class="modal-disclaimer" id="modal-disclaimer"></p>
+        <p class="modal-footnote" id="modal-disclaimer"></p>
     </div>
 </div>
 
-<!-- ── SUCCESS ── -->
+<!-- ══════════════════ SUCCESS ══════════════════ -->
 <div class="success-overlay" id="success-screen" hidden>
-    <div class="success-content">
-        <div class="success-anim">
-            <svg width="80" height="80" viewBox="0 0 80 80" fill="none" aria-hidden="true">
-                <circle cx="40" cy="40" r="40" fill="rgba(212,17,21,0.12)"/>
-                <circle cx="40" cy="40" r="29" fill="rgba(212,17,21,0.22)"/>
-                <path d="M26 40l10 10 19-20" stroke="#d41115" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>
+    <div class="success-inner">
+        <div class="success-circle">
+            <svg width="88" height="88" viewBox="0 0 88 88" fill="none" aria-hidden="true">
+                <circle cx="44" cy="44" r="44" fill="rgba(212,17,21,0.10)"/>
+                <circle cx="44" cy="44" r="32" fill="rgba(212,17,21,0.18)"/>
+                <path d="M28 44l12 12 20-22" stroke="#d41115" stroke-width="3.8" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
         </div>
         <h2 class="success-title" id="success-title">Готово!</h2>
-        <p class="success-desc" id="success-desc"></p>
-        <button class="success-btn" id="success-btn" data-i18n="great">Чудово!</button>
+        <p class="success-desc"  id="success-desc"></p>
+        <button class="primary-btn" id="success-btn" data-i18n="great">Чудово!</button>
     </div>
 </div>
 
+<!-- TOASTS -->
 <div class="toast-stack" id="toasts" aria-live="polite"></div>
 
 <script src="rent.js"></script>
