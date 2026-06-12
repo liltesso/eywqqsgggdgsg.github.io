@@ -80,87 +80,104 @@
                     <filter id="threatShadow" x="-50%" y="-50%" width="200%" height="200%">
                         <feDropShadow dx="0" dy="0" stdDeviation="4" flood-color="#ff2a2e" flood-opacity="0.8"/>
                     </filter>
-                    <!-- Ukraine clip -->
+                    <!-- Ukraine clip (high-detail georeferenced outline · 1991 borders) -->
                     <clipPath id="uaClip">
-                        <path d="M 130,54 L 270,47 L 378,47 L 432,23 L 568,8 L 622,16 L 649,54 L 730,93 L 865,194 L 946,272 L 984,365 L 984,388 L 919,419 L 838,427 L 784,466 L 746,497 L 714,489 L 692,520 L 730,567 L 703,606 L 649,629 L 568,621 L 524,598 L 541,544 L 514,466 L 470,474 L 416,466 L 378,489 L 335,536 L 324,505 L 314,388 L 324,350 L 270,311 L 249,303 L 189,311 L 135,272 L 108,210 L 81,163 L 54,140 L 38,109 L 16,85 L 54,47 L 108,47 Z"/>
+                        <path d="M 112,138 L 128,106 L 159,92 L 203,82 L 242,92 L 284,95 L 328,88 L 382,73 L 435,70 L 491,87 L 550,87 L 602,85 L 640,106 L 662,112 L 689,125 L 728,129 L 748,153 L 819,187 L 877,238 L 908,288 L 954,335 L 963,380 L 969,398 L 958,414 L 889,419 L 820,421 L 799,445 L 711,526 L 794,561 L 782,564 L 739,557 L 708,608 L 663,616 L 635,644 L 610,630 L 564,557 L 569,551 L 625,495 L 685,512 L 689,491 L 582,462 L 539,457 L 505,471 L 476,481 L 449,512 L 417,544 L 390,547 L 367,544 L 352,540 L 335,546 L 329,563 L 286,549 L 247,511 L 204,486 L 154,469 L 102,486 L 77,481 L 43,380 L 35,349 L 30,318 L 32,294 L 35,266 L 46,207 L 83,170 L 113,162 Z"/>
                     </clipPath>
-                    <!-- Crimea diagonal hatch (occupied territory) -->
-                    <pattern id="crimea-hatch" x="0" y="0" width="8" height="8"
-                             patternUnits="userSpaceOnUse" patternTransform="rotate(42)">
-                        <line x1="0" y1="0" x2="0" y2="8" stroke="rgba(130,160,230,0.55)" stroke-width="1.2"/>
-                    </pattern>
-                    <!-- Subtle lat/lon grid inside UA -->
-                    <pattern id="ua-grid" x="0" y="0" width="50" height="44"
+                    <!-- Inner relief shading for cartographic depth -->
+                    <radialGradient id="uaRelief" cx="46%" cy="40%" r="64%">
+                        <stop offset="0%"   stop-color="#2a3f66" stop-opacity="0.55"/>
+                        <stop offset="55%"  stop-color="#172741" stop-opacity="0.28"/>
+                        <stop offset="100%" stop-color="#0a111d" stop-opacity="0"/>
+                    </radialGradient>
+                    <!-- Coast drop-shadow into the sea -->
+                    <filter id="coastShadow" x="-12%" y="-12%" width="124%" height="124%">
+                        <feDropShadow dx="0" dy="2.5" stdDeviation="5" flood-color="#00060f" flood-opacity="0.7"/>
+                    </filter>
+                    <!-- Subtle lat/lon graticule inside UA -->
+                    <pattern id="ua-grid" x="0" y="0" width="46" height="40"
                              patternUnits="userSpaceOnUse">
-                        <path d="M 50 0 L 0 0 0 44" fill="none"
-                              stroke="rgba(255,255,255,0.018)" stroke-width="0.5"/>
+                        <path d="M 46 0 L 0 0 0 40" fill="none"
+                              stroke="rgba(150,180,230,0.04)" stroke-width="0.6"/>
                     </pattern>
                 </defs>
 
                 <!-- Sea / outside (dark navy) -->
                 <rect width="1000" height="660" fill="#060b14"/>
 
-                <!-- Black Sea: south of Ukraine -->
-                <path class="map-black-sea" d="M 0,480 L 130,430 L 220,440 L 330,490 L 416,495 L 470,472 L 514,466 L 541,544 L 524,598 L 568,621 L 649,629 L 703,606 L 730,567 L 784,521 L 1000,480 L 1000,660 L 0,660 Z"/>
+                <!-- Black Sea (drawn under the land body) -->
+                <path class="map-black-sea" d="M 0,660 L 0,500 L 80,485 L 160,470 L 250,500 L 330,560 L 420,545 L 480,480 L 560,455 L 600,492 L 560,560 L 635,652 L 720,615 L 800,560 L 1000,540 L 1000,660 Z"/>
 
-                <!-- Ukraine filled body -->
-                <path class="ua-body" d="M 130,54 L 270,47 L 378,47 L 432,23 L 568,8 L 622,16 L 649,54 L 730,93 L 865,194 L 946,272 L 984,365 L 984,388 L 919,419 L 838,427 L 784,466 L 746,497 L 714,489 L 692,520 L 730,567 L 703,606 L 649,629 L 568,621 L 524,598 L 541,544 L 514,466 L 470,474 L 416,466 L 378,489 L 335,536 L 324,505 L 314,388 L 324,350 L 270,311 L 249,303 L 189,311 L 135,272 L 108,210 L 81,163 L 54,140 L 38,109 L 16,85 L 54,47 L 108,47 Z"
+                <!-- Ukraine filled body (high-detail 1991 outline) -->
+                <path class="ua-body" filter="url(#coastShadow)"
+                      d="M 112,138 L 128,106 L 159,92 L 203,82 L 242,92 L 284,95 L 328,88 L 382,73 L 435,70 L 491,87 L 550,87 L 602,85 L 640,106 L 662,112 L 689,125 L 728,129 L 748,153 L 819,187 L 877,238 L 908,288 L 954,335 L 963,380 L 969,398 L 958,414 L 889,419 L 820,421 L 799,445 L 711,526 L 794,561 L 782,564 L 739,557 L 708,608 L 663,616 L 635,644 L 610,630 L 564,557 L 569,551 L 625,495 L 685,512 L 689,491 L 582,462 L 539,457 L 505,471 L 476,481 L 449,512 L 417,544 L 390,547 L 367,544 L 352,540 L 335,546 L 329,563 L 286,549 L 247,511 L 204,486 L 154,469 L 102,486 L 77,481 L 43,380 L 35,349 L 30,318 L 32,294 L 35,266 L 46,207 L 83,170 L 113,162 Z"
                       fill="url(#uaFill)"/>
 
-                <!-- Grid overlay inside Ukraine -->
+                <!-- Relief shading + graticule clipped to Ukraine -->
+                <rect class="ua-relief" x="0" y="0" width="1000" height="660" clip-path="url(#uaClip)" fill="url(#uaRelief)"/>
                 <rect class="map-grid-overlay" x="0" y="0" width="1000" height="660" clip-path="url(#uaClip)"/>
 
-                <!-- Oblast administrative divisions (1991 borders) -->
+                <!-- Oblast administrative divisions (24 oblasts + Crimea, 1991 borders) -->
                 <g class="map-oblasts" clip-path="url(#uaClip)">
-                    <path d="M150,118 C172,178 186,238 198,298 C204,330 206,360 204,392"/>
-                    <path d="M250,84 C262,166 268,248 270,322 C271,360 268,396 262,430"/>
-                    <path d="M345,66 C351,158 350,242 345,322 C342,372 338,420 332,468"/>
-                    <path d="M432,58 C437,158 433,250 426,338 C421,400 414,452 404,496"/>
-                    <path d="M508,72 C503,150 498,212 492,262 C486,318 480,372 478,420"/>
-                    <path d="M600,52 C611,128 616,200 612,262 C608,318 600,366 592,408"/>
-                    <path d="M700,116 C705,198 705,280 700,342 C696,392 688,432 678,470"/>
-                    <path d="M804,176 C799,258 793,322 782,382 C775,420 764,452 752,480"/>
-                    <path d="M64,206 C204,196 360,210 472,226 C560,238 648,250 720,268"/>
-                    <path d="M118,298 C280,288 432,298 562,318 C648,330 728,348 792,370"/>
-                    <path d="M330,372 C470,366 602,372 720,384 C770,389 812,398 844,408"/>
-                    <path d="M470,440 C560,446 650,470 720,492 C760,505 792,520 812,536"/>
-                    <path d="M560,520 C620,526 680,540 700,560"/>
+                    <!-- Vertical meridional dividers (W→E) -->
+                    <path d="M 95,200 C 120,250 132,300 140,355 C 146,400 150,440 150,475"/>
+                    <path d="M 160,150 C 180,210 196,275 206,340 C 213,390 214,435 210,470"/>
+                    <path d="M 250,110 C 262,180 270,255 272,330 C 273,390 268,445 256,500"/>
+                    <path d="M 345,95 C 352,180 352,265 348,345 C 345,405 338,465 330,520"/>
+                    <path d="M 440,82 C 446,175 444,265 438,350 C 433,415 424,475 412,525"/>
+                    <path d="M 540,90 C 535,180 528,255 520,320 C 513,380 502,445 492,490"/>
+                    <path d="M 640,108 C 648,195 650,280 644,355 C 639,415 628,470 614,508"/>
+                    <path d="M 740,135 C 746,225 744,305 732,375 C 723,425 710,468 695,500"/>
+                    <path d="M 845,205 C 842,285 832,350 816,408 C 805,448 790,480 774,505"/>
+                    <!-- Horizontal parallel dividers (N→S) -->
+                    <path d="M 60,205 C 200,192 360,202 500,214 C 620,225 740,242 850,268"/>
+                    <path d="M 95,290 C 250,278 420,288 570,308 C 680,323 780,344 870,372"/>
+                    <path d="M 200,375 C 360,366 520,372 660,388 C 740,398 808,414 858,432"/>
+                    <path d="M 330,455 C 440,458 560,470 660,492 C 720,506 772,522 805,540"/>
                 </g>
 
-                <!-- Sea of Azov (drawn over Ukraine body to show water) -->
+                <!-- Sea of Azov (over land body to reveal water in the NE pocket) -->
                 <path class="map-azov-sea"
-                      d="M 692,477 L 714,467 L 784,450 L 838,427 L 919,404 L 962,378 L 962,400 L 838,443 L 784,521 L 708,511 Z"/>
+                      d="M 711,526 L 799,445 L 889,419 L 958,414 L 966,440 L 905,475 L 815,520 L 740,545 Z"/>
 
-                <!-- Dnipro river -->
+                <!-- Major rivers ─────────────────────────────────── -->
+                <!-- Dnipro (Дніпро): N border → Kyiv → Dnipro → Kherson mouth -->
+                <path class="map-river dnipro" fill="none"
+                      d="M 491,90 C 472,120 461,150 460,182
+                         C 459,228 478,268 532,298
+                         C 600,330 668,322 700,316
+                         C 712,350 668,392 624,420
+                         C 596,440 580,452 560,460"/>
+                <!-- Desna (tributary of Dnipro, NE) -->
+                <path class="map-river minor" fill="none"
+                      d="M 690,135 C 640,175 590,210 540,245 C 500,272 472,292 460,300"/>
+                <!-- Dniester (Дністер): Carpathians → SW Black Sea mouth -->
                 <path class="map-river" fill="none"
-                      d="M 597,28 C 582,65 562,110 535,165 C 516,202 504,235 504,245
-                         C 510,268 528,278 555,300 C 596,325 644,318 695,318
-                         C 712,336 712,356 700,376 C 682,400 646,414 614,430
-                         C 594,445 578,455 571,470"/>
-                <!-- Dniester river (Дністер) - W Ukraine -->
+                      d="M 90,250 C 120,295 165,330 220,368
+                         C 285,410 355,448 412,478
+                         C 432,488 442,495 449,500"/>
+                <!-- Southern Bug (Південний Буг): central → Mykolaiv -->
                 <path class="map-river" fill="none"
-                      d="M 135,100 C 148,135 155,170 160,210
-                         C 168,250 178,290 200,330
-                         C 220,366 248,395 265,430
-                         C 290,470 318,490 335,510"/>
-                <!-- Southern Bug river -->
-                <path class="map-river" fill="none"
-                      d="M 294,210 C 302,240 315,270 330,300
-                         C 348,334 368,360 390,390
-                         C 408,415 425,440 445,460"/>
+                      d="M 300,205 C 332,265 378,330 426,392
+                         C 466,440 504,468 528,484"/>
+                <!-- Siverskyi Donets (E Ukraine) -->
+                <path class="map-river minor" fill="none"
+                      d="M 728,135 C 760,180 800,225 828,272
+                         C 852,312 858,350 850,382"/>
 
-                <!-- Crimea: integral part of Ukraine (1991 borders) — subtle peninsula divider -->
-                <path class="ua-isthmus"
-                      d="M 514,466 L 541,500 M 692,520 L 660,512"/>
+                <!-- Perekop isthmus — Crimea connection (1991 borders) -->
+                <path class="ua-isthmus" d="M 625,495 L 689,491"/>
 
                 <!-- Ukraine border (glow + crisp) -->
-                <path class="ua-border-glow" d="M 130,54 L 270,47 L 378,47 L 432,23 L 568,8 L 622,16 L 649,54 L 730,93 L 865,194 L 946,272 L 984,365 L 984,388 L 919,419 L 838,427 L 784,466 L 746,497 L 714,489 L 692,520 L 730,567 L 703,606 L 649,629 L 568,621 L 524,598 L 541,544 L 514,466 L 470,474 L 416,466 L 378,489 L 335,536 L 324,505 L 314,388 L 324,350 L 270,311 L 249,303 L 189,311 L 135,272 L 108,210 L 81,163 L 54,140 L 38,109 L 16,85 L 54,47 L 108,47 Z"/>
-                <path class="ua-border"     d="M 130,54 L 270,47 L 378,47 L 432,23 L 568,8 L 622,16 L 649,54 L 730,93 L 865,194 L 946,272 L 984,365 L 984,388 L 919,419 L 838,427 L 784,466 L 746,497 L 714,489 L 692,520 L 730,567 L 703,606 L 649,629 L 568,621 L 524,598 L 541,544 L 514,466 L 470,474 L 416,466 L 378,489 L 335,536 L 324,505 L 314,388 L 324,350 L 270,311 L 249,303 L 189,311 L 135,272 L 108,210 L 81,163 L 54,140 L 38,109 L 16,85 L 54,47 L 108,47 Z"/>
+                <path class="ua-border-glow"
+                      d="M 112,138 L 128,106 L 159,92 L 203,82 L 242,92 L 284,95 L 328,88 L 382,73 L 435,70 L 491,87 L 550,87 L 602,85 L 640,106 L 662,112 L 689,125 L 728,129 L 748,153 L 819,187 L 877,238 L 908,288 L 954,335 L 963,380 L 969,398 L 958,414 L 889,419 L 820,421 L 799,445 L 711,526 L 794,561 L 782,564 L 739,557 L 708,608 L 663,616 L 635,644 L 610,630 L 564,557 L 569,551 L 625,495 L 685,512 L 689,491 L 582,462 L 539,457 L 505,471 L 476,481 L 449,512 L 417,544 L 390,547 L 367,544 L 352,540 L 335,546 L 329,563 L 286,549 L 247,511 L 204,486 L 154,469 L 102,486 L 77,481 L 43,380 L 35,349 L 30,318 L 32,294 L 35,266 L 46,207 L 83,170 L 113,162 Z"/>
+                <path class="ua-border"
+                      d="M 112,138 L 128,106 L 159,92 L 203,82 L 242,92 L 284,95 L 328,88 L 382,73 L 435,70 L 491,87 L 550,87 L 602,85 L 640,106 L 662,112 L 689,125 L 728,129 L 748,153 L 819,187 L 877,238 L 908,288 L 954,335 L 963,380 L 969,398 L 958,414 L 889,419 L 820,421 L 799,445 L 711,526 L 794,561 L 782,564 L 739,557 L 708,608 L 663,616 L 635,644 L 610,630 L 564,557 L 569,551 L 625,495 L 685,512 L 689,491 L 582,462 L 539,457 L 505,471 L 476,481 L 449,512 L 417,544 L 390,547 L 367,544 L 352,540 L 335,546 L 329,563 L 286,549 L 247,511 L 204,486 L 154,469 L 102,486 L 77,481 L 43,380 L 35,349 L 30,318 L 32,294 L 35,266 L 46,207 L 83,170 L 113,162 Z"/>
 
                 <!-- Region / water labels -->
-                <text class="map-water-label" x="420" y="592" text-anchor="middle" font-size="11">Чорне море</text>
-                <text class="map-water-label" x="845" y="462" text-anchor="middle" font-size="8">Азовське море</text>
-                <text class="map-region-label" x="626" y="586" text-anchor="middle" font-size="9">Крим</text>
+                <text class="map-water-label" x="300" y="615" text-anchor="middle" font-size="12">Чорне море</text>
+                <text class="map-water-label" x="885" y="455" text-anchor="middle" font-size="8.5">Азовське море</text>
+                <text class="map-region-label" x="660" y="585" text-anchor="middle" font-size="9">Крим</text>
 
                 <!-- Compass rose -->
                 <g class="map-compass" transform="translate(967,42)">
