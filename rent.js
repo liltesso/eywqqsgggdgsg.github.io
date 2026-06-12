@@ -40,6 +40,21 @@ const TR = {
         alerts_active:'Активні загрози', alerts_recent:'Останні атаки',
         alerts_disclaimer:'⚠️ Дані mapa.ua наближені. Не використовуйте для прийняття рішень — слідкуйте за офіційними джерелами.',
         legend_threat:'Загроза', legend_city:'Місто',
+        balance:'Баланс', refresh:'Оновити', not_connected:'не підключено',
+        account_label:'Акаунт', actions_label:'Швидкі дії', links_label:'Корисні посилання',
+        support:'Підтримка', news:'Новини та оновлення', share_app:'Поділитися застосунком',
+        rate_app:'Оцінити сервіс', terms:'Публічна оферта', privacy:'Політика конфіденційності',
+        faq:'Часті запитання', how_it_works:'Як це працює',
+        provider:'Постачальник', data_source:'Джерело даних',
+        about_desc:'Gifts Market — маркетплейс для оренди та купівлі колекційних Telegram-подарунків (NFT) у мережі TON. Оплата здійснюється напряму з вашого гаманця, а подарунок зараховується на акаунт одразу після підтвердження транзакції в блокчейні.',
+        version_label:'Версія', copied:'Скопійовано', refreshed:'Оновлено',
+        price_range:'Ціна, TON', discount_only:'Лише зі знижкою', sort_label:'Сортування',
+        from_label:'від', to_label:'до', any:'Будь-яка', wallet_balance:'Баланс гаманця',
+        ton_note:'NFT зараховується на ваш акаунт одразу після підтвердження транзакції в мережі TON.',
+        active_filters:'Активні фільтри', topup_wallet:'Поповнити гаманець', secure_ton:'Захищено мережею TON',
+        soon:'Незабаром', balance_err:'Не вдалося отримати баланс',
+        how_text:'1. Підключіть TON-гаманець у профілі.\n2. Оберіть подарунок в «Оренда» або «Продаж».\n3. Для оренди задайте термін повзунком.\n4. Підтвердьте транзакцію у гаманці.\n5. NFT зарахується на акаунт автоматично після підтвердження в мережі.',
+        faq_text:'• Оренда — тимчасове користування NFT-подарунком на обраний термін.\n• Оплата здійснюється у TON напряму з вашого гаманця.\n• Комісія сервісу вже врахована у фінальній ціні.\n• Статус замовлення видно у вкладці «Замовлення».\n• Питання — напишіть у підтримку.',
     },
     en: {
         catalog:'Catalog', orders:'Orders', profile:'Profile',
@@ -70,6 +85,21 @@ const TR = {
         alerts_active:'Active threats', alerts_recent:'Recent attacks',
         alerts_disclaimer:'⚠️ mapa.ua data is approximate. Don\'t use for safety decisions — follow official sources.',
         legend_threat:'Threat', legend_city:'City',
+        balance:'Balance', refresh:'Refresh', not_connected:'not connected',
+        account_label:'Account', actions_label:'Quick actions', links_label:'Useful links',
+        support:'Support', news:'News & updates', share_app:'Share the app',
+        rate_app:'Rate the service', terms:'Terms of Service', privacy:'Privacy Policy',
+        faq:'FAQ', how_it_works:'How it works',
+        provider:'Provider', data_source:'Data source',
+        about_desc:'Gifts Market is a marketplace for renting and buying collectible Telegram gifts (NFTs) on the TON blockchain. Payments go directly from your wallet, and the gift is credited to your account as soon as the transaction is confirmed on-chain.',
+        version_label:'Version', copied:'Copied', refreshed:'Refreshed',
+        price_range:'Price, TON', discount_only:'Discounted only', sort_label:'Sort by',
+        from_label:'from', to_label:'to', any:'Any', wallet_balance:'Wallet balance',
+        ton_note:'The NFT is credited to your account as soon as the transaction is confirmed on the TON network.',
+        active_filters:'Active filters', topup_wallet:'Top up wallet', secure_ton:'Secured by TON',
+        soon:'Coming soon', balance_err:'Could not fetch balance',
+        how_text:'1. Connect a TON wallet in your profile.\n2. Pick a gift under Rent or Sale.\n3. For rentals, set the period with the slider.\n4. Confirm the transaction in your wallet.\n5. The NFT is credited to your account automatically once confirmed on-chain.',
+        faq_text:'• Renting = temporary use of an NFT gift for the chosen period.\n• Payments are made in TON directly from your wallet.\n• The service fee is already included in the final price.\n• Order status is shown in the Orders tab.\n• Any questions — contact support.',
     },
     ru: {
         catalog:'Каталог', orders:'Заказы', profile:'Профиль',
@@ -100,6 +130,21 @@ const TR = {
         alerts_active:'Активные угрозы', alerts_recent:'Последние атаки',
         alerts_disclaimer:'⚠️ Данные mapa.ua приближённые. Не используйте для решений — следите за официальными источниками.',
         legend_threat:'Угроза', legend_city:'Город',
+        balance:'Баланс', refresh:'Обновить', not_connected:'не подключено',
+        account_label:'Аккаунт', actions_label:'Быстрые действия', links_label:'Полезные ссылки',
+        support:'Поддержка', news:'Новости и обновления', share_app:'Поделиться приложением',
+        rate_app:'Оценить сервис', terms:'Публичная оферта', privacy:'Политика конфиденциальности',
+        faq:'Частые вопросы', how_it_works:'Как это работает',
+        provider:'Поставщик', data_source:'Источник данных',
+        about_desc:'Gifts Market — маркетплейс для аренды и покупки коллекционных Telegram-подарков (NFT) в сети TON. Оплата проходит напрямую с вашего кошелька, а подарок зачисляется на аккаунт сразу после подтверждения транзакции в блокчейне.',
+        version_label:'Версия', copied:'Скопировано', refreshed:'Обновлено',
+        price_range:'Цена, TON', discount_only:'Только со скидкой', sort_label:'Сортировка',
+        from_label:'от', to_label:'до', any:'Любая', wallet_balance:'Баланс кошелька',
+        ton_note:'NFT зачисляется на ваш аккаунт сразу после подтверждения транзакции в сети TON.',
+        active_filters:'Активные фильтры', topup_wallet:'Пополнить кошелёк', secure_ton:'Защищено сетью TON',
+        soon:'Скоро', balance_err:'Не удалось получить баланс',
+        how_text:'1. Подключите TON-кошелёк в профиле.\n2. Выберите подарок в «Аренда» или «Продажа».\n3. Для аренды задайте срок ползунком.\n4. Подтвердите транзакцию в кошельке.\n5. NFT зачислится на аккаунт автоматически после подтверждения в сети.',
+        faq_text:'• Аренда — временное пользование NFT-подарком на выбранный срок.\n• Оплата проходит в TON напрямую с вашего кошелька.\n• Комиссия сервиса уже включена в финальную цену.\n• Статус заказа виден во вкладке «Заказы».\n• Вопросы — напишите в поддержку.',
     },
 };
 
@@ -123,7 +168,7 @@ function applyLang() {
         $('rent-btn-text').textContent = state.mode === 'rent' ? t('rent_btn') : t('buy_btn');
     }
     $('modal-ppd-label').textContent = state.mode === 'rent' ? t('per_day') : t('price_label');
-    $('modal-disclaimer').textContent = t('ton_payment') + ': NFT зараховується на ваш акаунт після підтвердження.';
+    $('modal-disclaimer').textContent = t('ton_note');
 }
 
 // ─── Telegram ────────────────────────────────────────────────────────────────
@@ -163,7 +208,7 @@ const state = {
     selected: null,
     duration: 7,
     ordersKind: '',
-    filters: { model: null, backdrop: null, symbol: null },
+    filters: { model: null, backdrop: null, symbol: null, priceMin: null, priceMax: null, discountOnly: false },
     filterOptions: { models: [], backdrops: [], symbols: [] },
 };
 
@@ -317,12 +362,24 @@ function renderSkeletons() {
     if (bar) bar.hidden = true;
 }
 
+function itemPrice(g) {
+    return state.mode === 'rent'
+        ? parseFloat(g.price_per_day_ton ?? 0)
+        : parseFloat(g.price_with_markup ?? 0);
+}
+
 function visibleItems() {
     const q = state.query.trim().toLowerCase();
-    if (!q) return state.items;
-    return state.items.filter(g =>
-        (g.name || '').toLowerCase().includes(q) ||
-        (g.nft_address || '').toLowerCase().includes(q));
+    const { priceMin, priceMax, discountOnly } = state.filters;
+    return state.items.filter(g => {
+        if (q && !((g.name || '').toLowerCase().includes(q) ||
+                   (g.nft_address || '').toLowerCase().includes(q))) return false;
+        const p = itemPrice(g);
+        if (priceMin != null && p < priceMin) return false;
+        if (priceMax != null && p > priceMax) return false;
+        if (discountOnly && state.mode === 'rent' && !(g.discount_per_day > 0)) return false;
+        return true;
+    });
 }
 
 function renderCatalogStats() {
@@ -334,20 +391,33 @@ function renderCatalogStats() {
     const wordForm = n === 1 ? 'подарунок' : (n >= 2 && n <= 4 ? 'подарунки' : 'подарунків');
     let html = `<span class="catalog-stats-count">${n} ${wordForm}</span>`;
 
-    const activeF = Object.entries(state.filters).filter(([,v]) => v);
-    if (activeF.length) {
-        html += `<span class="catalog-stats-sep">•</span>`;
-        html += activeF.map(([k, v]) =>
-            `<span class="catalog-stats-filter-tag">${esc(t(k))}: ${esc(v)}
-             <button onclick="clearFilter('${esc(k)}')" aria-label="clear">×</button></span>`
-        ).join('');
+    // Attribute tags
+    const tags = [];
+    ['model', 'backdrop', 'symbol'].forEach(k => {
+        if (state.filters[k]) tags.push(
+            `<span class="catalog-stats-filter-tag">${esc(t(k))}: ${esc(state.filters[k])}
+             <button onclick="clearFilter('${esc(k)}')" aria-label="clear">×</button></span>`);
+    });
+    // Price tag
+    const { priceMin, priceMax, discountOnly } = state.filters;
+    if (priceMin != null || priceMax != null) {
+        const lbl = `${priceMin != null ? priceMin : '0'}–${priceMax != null ? priceMax : '∞'} TON`;
+        tags.push(`<span class="catalog-stats-filter-tag">${esc(lbl)}
+             <button onclick="clearFilter('price')" aria-label="clear">×</button></span>`);
     }
+    if (discountOnly) tags.push(
+        `<span class="catalog-stats-filter-tag">🎉 ${esc(t('discount_only'))}
+         <button onclick="clearFilter('discountOnly')" aria-label="clear">×</button></span>`);
+
+    if (tags.length) html += `<span class="catalog-stats-sep">•</span>` + tags.join('');
     bar.innerHTML = html;
     bar.hidden = false;
 }
 
 window.clearFilter = function(key) {
-    state.filters[key] = null;
+    if (key === 'price') { state.filters.priceMin = null; state.filters.priceMax = null; }
+    else if (key === 'discountOnly') { state.filters.discountOnly = false; }
+    else { state.filters[key] = null; }
     $('filter-active-dot').hidden = !hasActiveFilters();
     loadItems(true);
 };
@@ -462,7 +532,9 @@ window.__reload = () => loadItems(true);
 // ─── Filter sheet ─────────────────────────────────────────────────────────────
 
 function hasActiveFilters() {
-    return !!(state.filters.model || state.filters.backdrop || state.filters.symbol);
+    const f = state.filters;
+    return !!(f.model || f.backdrop || f.symbol ||
+              f.priceMin != null || f.priceMax != null || f.discountOnly);
 }
 
 function openFilterSheet() {
@@ -480,7 +552,7 @@ function buildFilterSheet() {
         { key: 'backdrop', label: t('backdrop'), opts: state.filterOptions.backdrops },
         { key: 'symbol',  label: t('symbol'),  opts: state.filterOptions.symbols  },
     ];
-    body.innerHTML = sections.map(sec => {
+    const attrHtml = sections.map(sec => {
         if (!sec.opts.length) return '';
         const chips = [{ val: null, label: t('all') }, ...sec.opts.map(v => ({ val: v, label: v }))]
             .map(o => {
@@ -493,6 +565,60 @@ function buildFilterSheet() {
             <div class="fs-chips">${chips}</div>
         </div>`;
     }).join('');
+
+    // Price range from currently loaded items
+    const prices = state.items.map(itemPrice).filter(p => p > 0);
+    const lo = prices.length ? Math.floor(Math.min(...prices)) : 0;
+    const hi = prices.length ? Math.ceil(Math.max(...prices))  : 100;
+    const curMin = state.filters.priceMin ?? lo;
+    const curMax = state.filters.priceMax ?? hi;
+    const priceHtml = `
+        <div>
+            <div class="fs-section-title">${esc(t('price_range'))}</div>
+            <div class="fs-price-row">
+                <div class="fs-price-field">
+                    <span class="fs-price-cap">${esc(t('from_label'))}</span>
+                    <input type="number" inputmode="decimal" id="fs-price-min"
+                           min="${lo}" max="${hi}" step="0.1" placeholder="${lo}" value="${state.filters.priceMin ?? ''}">
+                </div>
+                <span class="fs-price-dash">—</span>
+                <div class="fs-price-field">
+                    <span class="fs-price-cap">${esc(t('to_label'))}</span>
+                    <input type="number" inputmode="decimal" id="fs-price-max"
+                           min="${lo}" max="${hi}" step="0.1" placeholder="${hi}" value="${state.filters.priceMax ?? ''}">
+                </div>
+                <span class="fs-price-unit">TON</span>
+            </div>
+        </div>`;
+
+    // Discount-only toggle (rent mode only)
+    const discountHtml = state.mode === 'rent' ? `
+        <div>
+            <button class="fs-toggle${state.filters.discountOnly ? ' active' : ''}" id="fs-discount-toggle">
+                <span class="fs-toggle-label">🎉 ${esc(t('discount_only'))}</span>
+                <span class="fs-toggle-track"><span class="fs-toggle-knob"></span></span>
+            </button>
+        </div>` : '';
+
+    body.innerHTML = priceHtml + discountHtml + attrHtml;
+
+    // Wire price inputs
+    const minIn = $('fs-price-min'), maxIn = $('fs-price-max');
+    minIn?.addEventListener('input', () => {
+        const v = parseFloat(minIn.value);
+        state.filters.priceMin = Number.isFinite(v) ? v : null;
+    });
+    maxIn?.addEventListener('input', () => {
+        const v = parseFloat(maxIn.value);
+        state.filters.priceMax = Number.isFinite(v) ? v : null;
+    });
+
+    // Wire discount toggle
+    $('fs-discount-toggle')?.addEventListener('click', () => {
+        state.filters.discountOnly = !state.filters.discountOnly;
+        $('fs-discount-toggle').classList.toggle('active', state.filters.discountOnly);
+        if (tg) tg.HapticFeedback?.selectionChanged();
+    });
 
     body.querySelectorAll('.fs-chip').forEach(chip => {
         chip.addEventListener('click', () => {
@@ -513,7 +639,7 @@ $('filter-sheet').addEventListener('click', e => {
 });
 
 $('filter-reset-btn').addEventListener('click', () => {
-    state.filters = { model: null, backdrop: null, symbol: null };
+    state.filters = { model: null, backdrop: null, symbol: null, priceMin: null, priceMax: null, discountOnly: false };
     buildFilterSheet();
     $('filter-active-dot').hidden = true;
     if (tg) tg.HapticFeedback?.selectionChanged();
@@ -1307,19 +1433,57 @@ async function loadSettings() {
 }
 
 function refreshWalletUi() {
-    const btn = $('wallet-action-btn');
-    const status = $('wallet-status');
-    if (tonConnectUI?.connected) {
+    const btn      = $('wallet-action-btn');
+    const topup    = $('wallet-topup-btn');
+    const addrChip = $('wallet-addr-chip');
+    if (!btn) return;
+    const connected = !!tonConnectUI?.connected;
+
+    if (connected) {
         const addr = tonConnectUI.account?.address;
-        status.textContent = truncAddr(addr);
-        status.style.color = 'var(--green)';
+        if (addrChip) { addrChip.hidden = false; $('wallet-addr-text').textContent = truncAddr(addr); }
         btn.textContent = t('disconnect_wallet');
         btn.classList.add('disconnect');
+        if (topup) topup.hidden = false;
+        refreshBalance();
     } else {
-        status.textContent = 'не підключено';
-        status.style.color = '';
+        if (addrChip) addrChip.hidden = true;
+        const bal = $('wallet-balance'), uah = $('wallet-balance-uah');
+        if (bal) bal.textContent = '—';
+        if (uah) uah.textContent = '';
         btn.textContent = t('connect_wallet');
         btn.classList.remove('disconnect');
+        if (topup) topup.hidden = true;
+    }
+}
+
+async function fetchTonBalance(address) {
+    const r = await fetch(
+        `https://toncenter.com/api/v2/getAddressBalance?address=${encodeURIComponent(address)}`,
+        { headers: { 'Accept': 'application/json' } });
+    const j = await r.json();
+    if (!j || j.ok !== true) throw new Error('balance');
+    return Number(j.result) / 1e9;
+}
+
+let _balanceBusy = false;
+async function refreshBalance() {
+    const balEl = $('wallet-balance'), uahEl = $('wallet-balance-uah');
+    if (!balEl || !tonConnectUI?.connected) return;
+    const addr = tonConnectUI.account?.address;
+    if (!addr || _balanceBusy) return;
+    _balanceBusy = true;
+    balEl.textContent = '…';
+    if (uahEl) uahEl.textContent = '';
+    try {
+        const bal = await fetchTonBalance(addr);
+        balEl.textContent = bal.toLocaleString(lang === 'en' ? 'en-US' : 'uk-UA', { maximumFractionDigits: 2 });
+        if (uahEl) uahEl.textContent = '≈ ' + tonToUah(bal);
+    } catch {
+        balEl.textContent = '—';
+        if (uahEl) uahEl.textContent = t('balance_err');
+    } finally {
+        _balanceBusy = false;
     }
 }
 
@@ -1327,6 +1491,79 @@ async function toggleWallet() {
     if (!tonConnectUI) return notify('TonConnect недоступний', 'error');
     if (tonConnectUI.connected) await tonConnectUI.disconnect();
     else                        await tonConnectUI.openModal();
+}
+
+// ─── Profile links & quick actions ─────────────────────────────────────────────
+
+const GM_LINKS = {
+    support: window.GM_SUPPORT || 'mailto:partnersmerchant@gmail.com',
+    news:    window.GM_NEWS    || '',
+    terms:   'index.html',
+    privacy: 'index.html',
+    phone:   'tel:+380687525155',
+};
+
+function openUrl(url) {
+    if (!url) return;
+    try {
+        if (/^https:\/\/t\.me\//.test(url) && tg?.openTelegramLink) return tg.openTelegramLink(url);
+        if (/^https?:\/\//.test(url) && tg?.openLink)               return tg.openLink(url);
+    } catch { /* fall through */ }
+    window.location.href = url;
+}
+
+function copyText(text) {
+    if (!text) return;
+    if (navigator.clipboard?.writeText) {
+        navigator.clipboard.writeText(text).catch(() => fallbackCopy(text));
+    } else fallbackCopy(text);
+}
+function fallbackCopy(text) {
+    const el = document.createElement('input');
+    el.value = text; document.body.appendChild(el);
+    el.select(); try { document.execCommand('copy'); } catch {}
+    document.body.removeChild(el);
+}
+
+function showInfo(title, message) {
+    if (tg?.showPopup) {
+        try { tg.showPopup({ title: String(title).slice(0, 40), message: String(message).slice(0, 480) }); return; }
+        catch { /* fall through */ }
+    }
+    if (tg?.showAlert) { tg.showAlert(`${title}\n\n${message}`); return; }
+    alert(`${title}\n\n${message}`);
+}
+
+function handleProfileLink(kind) {
+    if (tg) tg.HapticFeedback?.impactOccurred('light');
+    switch (kind) {
+        case 'how':     return showInfo(t('how_it_works'), t('how_text'));
+        case 'faq':     return showInfo(t('faq'), t('faq_text'));
+        case 'terms':   return openUrl(GM_LINKS.terms);
+        case 'privacy': return openUrl(GM_LINKS.privacy);
+        case 'phone':   return openUrl(GM_LINKS.phone);
+    }
+}
+
+function shareApp() {
+    const link = window.GM_SHARE_URL || '';
+    if (link && tg?.openTelegramLink) {
+        tg.openTelegramLink(`https://t.me/share/url?url=${encodeURIComponent(link)}&text=${encodeURIComponent('Gifts Market — NFT')}`);
+    } else if (navigator.share) {
+        navigator.share({ title: 'Gifts Market', text: 'NFT gifts rental & sale on TON' }).catch(() => {});
+    } else {
+        notify(t('soon'), 'info');
+    }
+}
+
+function handleQuickAction(action) {
+    if (tg) tg.HapticFeedback?.impactOccurred('medium');
+    switch (action) {
+        case 'support': return openUrl(GM_LINKS.support);
+        case 'news':    return GM_LINKS.news ? openUrl(GM_LINKS.news) : notify(t('soon'), 'info');
+        case 'share':   return shareApp();
+        case 'rate':    return notify('⭐ ' + t('great'), 'success');
+    }
 }
 
 // ─── Tabs ──────────────────────────────────────────────────────────────────────
@@ -1370,6 +1607,18 @@ $('success-btn').addEventListener('click', closeSuccess);
 $('load-more-btn').addEventListener('click', () => loadItems(false));
 $('wallet-action-btn').addEventListener('click', toggleWallet);
 $('modal-error-close')?.addEventListener('click', hideModalError);
+
+$('wallet-refresh-btn')?.addEventListener('click', () => {
+    $('wallet-refresh-btn').classList.add('spin');
+    refreshBalance().finally(() => setTimeout(() => $('wallet-refresh-btn')?.classList.remove('spin'), 600));
+    if (tg) tg.HapticFeedback?.impactOccurred('light');
+});
+$('wallet-topup-btn')?.addEventListener('click', () => {
+    const addr = tonConnectUI?.account?.address;
+    if (addr) { copyText(addr); notify(t('copied'), 'success'); if (tg) tg.HapticFeedback?.notificationOccurred('success'); }
+});
+$$('.quick-action').forEach(b => b.addEventListener('click', () => handleQuickAction(b.dataset.action)));
+$$('.link-row').forEach(b => b.addEventListener('click', () => handleProfileLink(b.dataset.link)));
 
 $('topup-copy-btn').addEventListener('click', () => {
     if (!MERCHANT_WALLET) return;

@@ -1724,15 +1724,22 @@ body {
     stroke: rgba(20,60,130,0.12);
     stroke-width: 0.5;
 }
-.ua-crimea {
-    fill: rgba(20,30,48,0.90);
-    stroke: rgba(110,140,210,0.32);
-    stroke-width: 1.0;
-    stroke-dasharray: 5.5 3;
+/* Oblast administrative divisions (1991 borders) */
+.map-oblasts path {
+    fill: none;
+    stroke: rgba(125,155,215,0.13);
+    stroke-width: 0.7;
+    stroke-dasharray: 2 3.5;
+    stroke-linecap: round;
+    pointer-events: none;
 }
-.ua-crimea-hatch {
-    fill: url(#crimea-hatch);
-    opacity: 0.11;
+/* Crimea isthmus (Perekop) — subtle internal divider, fully Ukrainian */
+.ua-isthmus {
+    fill: none;
+    stroke: rgba(125,155,215,0.16);
+    stroke-width: 0.8;
+    stroke-dasharray: 2 3;
+    pointer-events: none;
 }
 .map-grid-overlay {
     fill: url(#ua-grid);
@@ -1741,6 +1748,12 @@ body {
     fill: rgba(65,115,195,0.28);
     font-style: italic; font-weight: 600;
     font-family: var(--font-en); letter-spacing: 0.6px;
+    pointer-events: none;
+}
+.map-region-label {
+    fill: rgba(150,175,225,0.34);
+    font-weight: 700; font-family: var(--font-en);
+    letter-spacing: 1.2px; text-transform: uppercase;
     pointer-events: none;
 }
 .map-compass { pointer-events: none; }
@@ -1860,3 +1873,181 @@ body {
 .settings-row:last-of-type { border-bottom: none; }
 .settings-row-label { font-size: 13px; color: var(--text-dim); }
 .settings-row-val { font-size: 13px; font-weight: 600; font-family: var(--font-en); }
+
+/* ╔══════════════════════════════════════════════════════════╗
+   ║  v8 — WALLET BALANCE · PROFILE LINKS · BETTER FILTER      ║
+   ╚══════════════════════════════════════════════════════════╝ */
+
+/* ── Wallet card with balance ────────────────────────── */
+.wallet-card {
+    background:
+        radial-gradient(120% 100% at 0% 0%, rgba(46,141,224,0.14), transparent 60%),
+        linear-gradient(135deg, var(--surface-2), var(--surface));
+    border: 1px solid var(--ton-border);
+    border-radius: var(--radius); padding: 18px;
+    position: relative; overflow: hidden;
+}
+.wallet-card::after {
+    content: ''; position: absolute; top: -40%; right: -20%;
+    width: 180px; height: 180px; border-radius: 50%;
+    background: radial-gradient(circle, var(--ton-glow), transparent 70%);
+    opacity: 0.30; pointer-events: none;
+}
+.wallet-card-head {
+    display: flex; align-items: center; justify-content: space-between;
+    position: relative; z-index: 1; margin-bottom: 10px;
+}
+.wallet-card-label {
+    font-size: 11px; font-weight: 700; color: var(--text-dim);
+    text-transform: uppercase; letter-spacing: 0.6px;
+}
+.wallet-refresh {
+    width: 28px; height: 28px; border-radius: 8px;
+    border: 1px solid var(--border-hi); background: var(--glass-btn);
+    color: var(--text-dim); cursor: pointer; transition: all 0.18s;
+    display: flex; align-items: center; justify-content: center;
+}
+.wallet-refresh:hover { color: var(--ton-2); border-color: var(--ton-border); }
+.wallet-refresh.spin svg { animation: spin 0.6s linear; }
+
+.wallet-balance-row {
+    display: flex; align-items: baseline; gap: 7px;
+    position: relative; z-index: 1;
+}
+.wallet-balance {
+    font-size: 34px; font-weight: 800; line-height: 1;
+    font-family: var(--font-en); color: #fff;
+    letter-spacing: -0.5px;
+}
+.wallet-balance-cur { font-size: 15px; font-weight: 700; color: var(--ton-2); }
+.wallet-balance-uah {
+    font-size: 12.5px; color: var(--text-muted); font-weight: 600;
+    margin-top: 4px; position: relative; z-index: 1; min-height: 16px;
+}
+.wallet-addr-chip {
+    display: inline-flex; align-items: center; gap: 5px;
+    margin-top: 12px; padding: 5px 10px; border-radius: 9px;
+    background: rgba(0,0,0,0.32); border: 1px solid var(--border);
+    color: var(--text-dim); font-size: 11px; font-family: monospace;
+    position: relative; z-index: 1;
+}
+.wallet-addr-chip[hidden] { display: none; }
+.wallet-actions {
+    display: flex; gap: 8px; margin-top: 14px;
+    position: relative; z-index: 1;
+}
+.wallet-btn {
+    flex: 1; padding: 12px 0; border-radius: var(--radius-sm);
+    font-family: var(--font); font-size: 13.5px; font-weight: 700;
+    cursor: pointer; transition: all 0.18s; border: 1px solid transparent;
+}
+.wallet-btn[hidden] { display: none; }
+.wallet-btn.primary {
+    background: linear-gradient(135deg, var(--ton-2), var(--ton));
+    color: #fff; box-shadow: 0 4px 18px var(--ton-glow);
+}
+.wallet-btn.primary:active { transform: scale(0.98); }
+.wallet-btn.primary.disconnect {
+    background: transparent; border-color: var(--border-hi);
+    color: var(--text-dim); box-shadow: none;
+}
+.wallet-btn.primary.disconnect:hover { border-color: var(--accent-border); color: var(--accent-3); }
+.wallet-btn.ghost {
+    background: var(--glass-btn); border-color: var(--ton-border); color: var(--ton-2);
+}
+.wallet-btn.ghost:hover { background: var(--ton-dim); }
+
+/* ── Quick actions grid ──────────────────────────────── */
+.quick-actions {
+    display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px;
+}
+.quick-action {
+    display: flex; flex-direction: column; align-items: center; gap: 7px;
+    padding: 14px 4px; border-radius: var(--radius-sm);
+    background: var(--surface); border: 1px solid var(--border);
+    color: var(--text-soft); cursor: pointer; transition: all 0.18s;
+    font-family: var(--font);
+}
+.quick-action:hover { border-color: var(--accent-border); color: var(--text); box-shadow: 0 6px 22px rgba(0,0,0,0.4); }
+.quick-action:active { transform: scale(0.95); }
+.qa-ic {
+    width: 38px; height: 38px; border-radius: 11px;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--accent-dim); border: 1px solid var(--accent-border); color: var(--accent-3);
+}
+.qa-label { font-size: 10.5px; font-weight: 600; letter-spacing: 0.1px; }
+
+/* ── Link rows ───────────────────────────────────────── */
+.link-row {
+    display: flex; align-items: center; gap: 12px; width: 100%;
+    padding: 13px 16px; background: transparent; border: none;
+    border-bottom: 1px solid var(--border); cursor: pointer;
+    font-family: var(--font); color: var(--text-soft);
+    transition: background 0.16s; text-align: left;
+}
+.link-row:last-child { border-bottom: none; }
+.link-row:hover { background: var(--glass-btn); }
+.link-row:active { background: var(--glass-hi); }
+.link-ic { font-size: 16px; width: 22px; text-align: center; flex-shrink: 0; }
+.link-text { flex: 1; font-size: 13.5px; font-weight: 600; }
+.link-arrow { font-size: 20px; color: var(--text-muted); font-weight: 400; }
+
+/* ── About description & secure note ─────────────────── */
+.about-desc {
+    font-size: 12.5px; line-height: 1.6; color: var(--text-dim);
+    padding: 4px 16px 12px; margin: 0;
+}
+.secure-note {
+    display: flex; align-items: center; justify-content: center; gap: 6px;
+    padding: 6px 0 2px; color: var(--text-muted);
+    font-size: 11.5px; font-weight: 600;
+}
+.secure-note svg { color: var(--green); }
+
+/* ── Filter: price range + toggle ────────────────────── */
+.fs-price-row { display: flex; align-items: flex-end; gap: 10px; }
+.fs-price-field {
+    flex: 1; display: flex; flex-direction: column; gap: 5px;
+}
+.fs-price-cap {
+    font-size: 10.5px; font-weight: 600; color: var(--text-muted);
+    text-transform: uppercase; letter-spacing: 0.4px;
+}
+.fs-price-field input {
+    width: 100%; background: var(--surface-3);
+    border: 1px solid var(--border-hi); border-radius: 11px;
+    padding: 11px 12px; color: var(--text);
+    font-family: var(--font-en); font-size: 15px; font-weight: 700;
+    outline: none; transition: border-color 0.18s, box-shadow 0.18s;
+    -moz-appearance: textfield;
+}
+.fs-price-field input::-webkit-outer-spin-button,
+.fs-price-field input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.fs-price-field input:focus { border-color: var(--accent-border); box-shadow: 0 0 0 3px var(--accent-dim); }
+.fs-price-dash { color: var(--text-muted); padding-bottom: 11px; }
+.fs-price-unit {
+    font-size: 12px; font-weight: 700; color: var(--text-dim);
+    font-family: var(--font-en); padding-bottom: 12px;
+}
+
+.fs-toggle {
+    width: 100%; display: flex; align-items: center; justify-content: space-between;
+    padding: 13px 16px; border-radius: var(--radius-sm);
+    background: var(--surface-2); border: 1px solid var(--border);
+    cursor: pointer; transition: all 0.18s; font-family: var(--font);
+}
+.fs-toggle.active { border-color: var(--accent-border); background: var(--accent-dim); }
+.fs-toggle-label { font-size: 13.5px; font-weight: 600; color: var(--text-soft); }
+.fs-toggle.active .fs-toggle-label { color: var(--accent-3); }
+.fs-toggle-track {
+    width: 44px; height: 26px; border-radius: 13px;
+    background: var(--surface-hi); position: relative; transition: background 0.2s;
+    flex-shrink: 0;
+}
+.fs-toggle.active .fs-toggle-track { background: var(--accent); }
+.fs-toggle-knob {
+    position: absolute; top: 3px; left: 3px;
+    width: 20px; height: 20px; border-radius: 50%; background: #fff;
+    transition: transform 0.2s var(--ease-spring); box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+}
+.fs-toggle.active .fs-toggle-knob { transform: translateX(18px); }
