@@ -206,20 +206,22 @@ function imgMarkup(g) {
 function rentCard(g, i) {
     const uahPerDay = tonToUah(g.price_per_day_ton);
     return `
-        <div class="gift-card" data-idx="${i}" role="button" tabindex="0">
+        <div class="gift-card" data-idx="${i}" role="button" tabindex="0" style="--i:${i}">
             <div class="gift-card-img-wrap">
                 ${imgMarkup(g)}
                 <div class="gift-card-img-overlay"></div>
-                <div class="gift-card-days-badge">${g.min_duration_days}–${g.max_duration_days}д</div>
+                <div class="gift-card-img-glow"></div>
+                <div class="gift-card-days-badge">📅 ${g.min_duration_days}–${g.max_duration_days}д</div>
+                <div class="gift-card-ton-badge">💎 ${g.price_per_day_ton}</div>
                 <div class="gift-card-over">
                     <div class="gift-card-name">${esc(g.name)}</div>
                     <div class="gift-card-price-row">
-                        <span class="gift-card-ton">💎 ${g.price_per_day_ton} <span style="font-size:9px;opacity:0.75">TON/д</span></span>
-                        <span class="gift-card-uah">${uahPerDay}/д</span>
+                        <span class="gift-card-ton">💎 ${g.price_per_day_ton}<span class="cur-label">TON/д</span></span>
+                        <span class="gift-card-uah">${uahPerDay}</span>
                     </div>
                 </div>
             </div>
-            <button class="gift-card-rent-btn" tabindex="-1">Орендувати</button>
+            <button class="gift-card-rent-btn" tabindex="-1"><span>Орендувати</span></button>
         </div>`;
 }
 
@@ -227,19 +229,21 @@ function saleCard(g, i) {
     const cur = g.currency || 'TON';
     const uah = tonToUah(g.price_with_markup);
     return `
-        <div class="gift-card" data-idx="${i}" role="button" tabindex="0">
+        <div class="gift-card" data-idx="${i}" role="button" tabindex="0" style="--i:${i}">
             <div class="gift-card-img-wrap">
                 ${imgMarkup(g)}
                 <div class="gift-card-img-overlay"></div>
+                <div class="gift-card-img-glow"></div>
+                <div class="gift-card-ton-badge">💎 ${g.price_with_markup}</div>
                 <div class="gift-card-over">
                     <div class="gift-card-name">${esc(g.name)}</div>
                     <div class="gift-card-price-row">
-                        <span class="gift-card-ton">💎 ${g.price_with_markup} <span style="font-size:9px;opacity:0.75">${esc(cur)}</span></span>
+                        <span class="gift-card-ton">💎 ${g.price_with_markup}<span class="cur-label">${esc(cur)}</span></span>
                         <span class="gift-card-uah">${uah}</span>
                     </div>
                 </div>
             </div>
-            <button class="gift-card-rent-btn" tabindex="-1">Купити</button>
+            <button class="gift-card-rent-btn" tabindex="-1"><span>Купити</span></button>
         </div>`;
 }
 
@@ -523,16 +527,21 @@ function orderCard(o) {
     const cancelBtn = o.can_cancel
         ? `<button class="order-cancel-btn" data-id="${o.order_id}">скасувати</button>`
         : '';
+    const imgContent = o.image_url
+        ? `<img src="${esc(o.image_url)}" alt="" loading="lazy" onerror="this.textContent='${o.kind === 'rent' ? '🎁' : '🛒'}';this.style.fontSize='28px'">`
+        : (o.kind === 'rent' ? '🎁' : '🛒');
+    const uahPrice = o.currency !== 'XTR' ? `<span style="font-size:11px;color:var(--text-muted);margin-left:4px">≈ ${tonToUah(o.our_price)}</span>` : '';
     return `
         <div class="order-card">
-            <div class="order-img">${o.kind === 'rent' ? '🎁' : '🛒'}</div>
+            <div class="order-img">${imgContent}</div>
             <div class="order-info">
                 <div class="order-name">${esc(o.nft_name || 'Подарунок')}</div>
                 <div class="order-meta">${esc(o.kind === 'rent' ? 'Оренда' : 'Купівля')}${dur} · ${esc(truncAddr(o.nft_address))}</div>
                 <div class="order-bottom">
-                    <span class="badge badge-${o.status}">${STATUS_LABEL[o.status] || o.status}</span>
-                    <div style="display:flex;align-items:center;">
-                        <span class="order-price">${o.our_price} ${o.currency === 'XTR' ? '⭐' : o.currency}</span>
+                    <span class="badge badge-${esc(o.status)}">${STATUS_LABEL[o.status] || o.status}</span>
+                    <div style="display:flex;align-items:center;gap:4px;">
+                        <span class="order-price">💎 ${o.our_price}${o.currency === 'XTR' ? ' ⭐' : ''}</span>
+                        ${uahPrice}
                         ${cancelBtn}
                     </div>
                 </div>
