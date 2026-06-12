@@ -208,8 +208,8 @@ const state = {
     selected: null,
     duration: 7,
     ordersKind: '',
-    filters: { model: null, backdrop: null, symbol: null, priceMin: null, priceMax: null, discountOnly: false },
-    filterOptions: { models: [], backdrops: [], symbols: [] },
+    filters: { collection: null, model: null, backdrop: null, symbol: null, priceMin: null, priceMax: null, discountOnly: false },
+    filterOptions: { collections: [], models: [], backdrops: [], symbols: [] },
 };
 
 // ─── DOM ──────────────────────────────────────────────────────────────────────
@@ -321,9 +321,10 @@ async function loadItems(reset = false) {
 
     const params = new URLSearchParams({ sort: state.sort });
     if (state.cursor) params.set('cursor', state.cursor);
-    if (state.filters.model)   params.set('model',   state.filters.model);
-    if (state.filters.backdrop) params.set('backdrop', state.filters.backdrop);
-    if (state.filters.symbol)  params.set('symbol',  state.filters.symbol);
+    if (state.filters.collection) params.set('collection', state.filters.collection);
+    if (state.filters.model)      params.set('model',      state.filters.model);
+    if (state.filters.backdrop)   params.set('backdrop',   state.filters.backdrop);
+    if (state.filters.symbol)     params.set('symbol',     state.filters.symbol);
 
     const endpoint = state.mode === 'rent' ? '/api/rent/gifts' : '/api/sale/gifts';
 
@@ -343,17 +344,20 @@ async function loadItems(reset = false) {
 }
 
 function extractFilterOptions() {
-    const models   = new Set();
-    const backdrops = new Set();
-    const symbols  = new Set();
+    const collections = new Set();
+    const models      = new Set();
+    const backdrops   = new Set();
+    const symbols     = new Set();
     state.items.forEach(g => {
-        if (g.model)   models.add(g.model);
-        if (g.backdrop) backdrops.add(g.backdrop);
-        if (g.symbol)  symbols.add(g.symbol);
+        if (g.collection_name) collections.add(g.collection_name);
+        if (g.model)           models.add(g.model);
+        if (g.backdrop)        backdrops.add(g.backdrop);
+        if (g.symbol)          symbols.add(g.symbol);
     });
-    state.filterOptions.models   = [...models].sort();
-    state.filterOptions.backdrops = [...backdrops].sort();
-    state.filterOptions.symbols  = [...symbols].sort();
+    state.filterOptions.collections = [...collections].sort();
+    state.filterOptions.models      = [...models].sort();
+    state.filterOptions.backdrops   = [...backdrops].sort();
+    state.filterOptions.symbols     = [...symbols].sort();
 }
 
 function renderSkeletons() {
@@ -393,7 +397,7 @@ function renderCatalogStats() {
 
     // Attribute tags
     const tags = [];
-    ['model', 'backdrop', 'symbol'].forEach(k => {
+    ['collection', 'model', 'backdrop', 'symbol'].forEach(k => {
         if (state.filters[k]) tags.push(
             `<span class="catalog-stats-filter-tag">${esc(t(k))}: ${esc(state.filters[k])}
              <button onclick="clearFilter('${esc(k)}')" aria-label="clear">×</button></span>`);
@@ -419,6 +423,12 @@ window.clearFilter = function(key) {
     else if (key === 'discountOnly') { state.filters.discountOnly = false; }
     else { state.filters[key] = null; }
     $('filter-active-dot').hidden = !hasActiveFilters();
+    loadItems(true);
+};
+
+window.clearAllFilters = function() {
+    state.filters = { collection: null, model: null, backdrop: null, symbol: null, priceMin: null, priceMax: null, discountOnly: false };
+    $('filter-active-dot').hidden = true;
     loadItems(true);
 };
 
@@ -552,7 +562,7 @@ window.__reload = () => loadItems(true);
 
 function hasActiveFilters() {
     const f = state.filters;
-    return !!(f.model || f.backdrop || f.symbol ||
+    return !!(f.collection || f.model || f.backdrop || f.symbol ||
               f.priceMin != null || f.priceMax != null || f.discountOnly);
 }
 
@@ -567,9 +577,10 @@ function closeFilterSheet() { $('filter-sheet').hidden = true; }
 function buildFilterSheet() {
     const body = $('filter-sheet-body');
     const sections = [
-        { key: 'model',   label: t('model'),   opts: state.filterOptions.models   },
-        { key: 'backdrop', label: t('backdrop'), opts: state.filterOptions.backdrops },
-        { key: 'symbol',  label: t('symbol'),  opts: state.filterOptions.symbols  },
+        { key: 'collection', label: t('collection'), opts: state.filterOptions.collections },
+        { key: 'model',      label: t('model'),      opts: state.filterOptions.models      },
+        { key: 'backdrop',   label: t('backdrop'),   opts: state.filterOptions.backdrops   },
+        { key: 'symbol',     label: t('symbol'),     opts: state.filterOptions.symbols     },
     ];
     const attrHtml = sections.map(sec => {
         if (!sec.opts.length) return '';
@@ -658,7 +669,7 @@ $('filter-sheet').addEventListener('click', e => {
 });
 
 $('filter-reset-btn').addEventListener('click', () => {
-    state.filters = { model: null, backdrop: null, symbol: null, priceMin: null, priceMax: null, discountOnly: false };
+    state.filters = { collection: null, model: null, backdrop: null, symbol: null, priceMin: null, priceMax: null, discountOnly: false };
     buildFilterSheet();
     $('filter-active-dot').hidden = true;
     if (tg) tg.HapticFeedback?.selectionChanged();
@@ -983,409 +994,6 @@ function closeSuccess() {
     loadItems(true);
 }
 
-// ─── Alerts / Air-raid map ─────────────────────────────────────────────────────
-
-const KIND_META = {
-    drone_piston:    { ua: 'Shahed / БПЛА',   en: 'Shahed / UAV',    ru: 'Shahed / БПЛА',    speed: 165 },
-    drone_jet:       { ua: 'Реактивний БПЛА',  en: 'Jet drone',       ru: 'Реактивный БПЛА', speed: 450 },
-    missile_cruise:  { ua: 'Крилата ракета',  en: 'Cruise missile',  ru: 'Крылатая ракета', speed: 800 },
-    missile_ballistic: { ua: 'Балістична ракета', en: 'Ballistic missile', ru: 'Балл. ракета', speed: 7500 },
-    bomb:            { ua: 'КАБ / Авіабомба',  en: 'Glide bomb',      ru: 'КАБ / Авиабомба',  speed: 750 },
-};
-
-const KIND_ICONS = {
-    drone_piston: `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="2"/><circle cx="5" cy="5" r="2"/><circle cx="19" cy="5" r="2"/><circle cx="5" cy="19" r="2"/><circle cx="19" cy="19" r="2"/><path d="M12 10V8M12 14v2M10 12H8M14 12h2"/></svg>`,
-    drone_jet:    `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2l8 16h-5l-3-6-3 6H4z"/></svg>`,
-    missile_cruise:    `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 14l13-9 5 5-9 13-2-5z"/><path d="M3 14l5 2"/></svg>`,
-    missile_ballistic: `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2v8M9 5l3-3 3 3M12 10c0 4 3 5 3 8a3 3 0 11-6 0c0-3 3-4 3-8z"/></svg>`,
-    bomb:         `<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="13" r="6"/><path d="M17 7l3-3M14 4l3 3"/></svg>`,
-};
-
-const ZONE_LABELS = {
-    chauda:'Чауда (Крим)', crimea:'Крим', sevastopol:'Севастополь', gvardiiske:'Гвардійське',
-    black_sea_w:'Чорне море (З)', black_sea_e:'Чорне море (С)', novorossiysk:'Новоросійськ',
-    primorsk:'Приморсько-Ахтарськ', eysk:'Єйськ', rostov:'Ростов', millerovo:'Міллерово',
-    morozovsk:'Морозовськ', kursk:'Курськ', belgorod:'Бєлгород', bryansk:'Брянськ',
-    orel:'Орел', shaykivka:'Шайківка', baltimor:'Балтимор/Воронеж',
-    buturlinovka:'Бутурлинівка', engels:'Енгельс', caspian:'Каспій',
-    mozyr:'Мозир (РБ)', tot_donbas:'ТОТ Донбас', tot_zap:'ТОТ Запоріжжя',
-    unknown:'Невідомо',
-};
-
-const UA_BOUNDS = { lonMin: 22.0, lonMax: 40.5, latMin: 44.0, latMax: 52.5 };
-
-const FALLBACK_CITIES = {
-    kyiv:         { ua: 'Київ',         en: 'Kyiv',         lat: 50.45, lon: 30.52 },
-    kharkiv:      { ua: 'Харків',       en: 'Kharkiv',      lat: 49.99, lon: 36.23 },
-    odesa:        { ua: 'Одеса',        en: 'Odesa',        lat: 46.48, lon: 30.73 },
-    dnipro:       { ua: 'Дніпро',       en: 'Dnipro',       lat: 48.46, lon: 35.04 },
-    lviv:         { ua: 'Львів',        en: 'Lviv',         lat: 49.84, lon: 24.03 },
-    zaporizhzhia: { ua: 'Запоріжжя',   en: 'Zaporizhzhia', lat: 47.84, lon: 35.14 },
-    mykolaiv:     { ua: 'Миколаїв',    en: 'Mykolaiv',     lat: 46.97, lon: 32.00 },
-    kherson:      { ua: 'Херсон',      en: 'Kherson',      lat: 46.65, lon: 32.62 },
-    poltava:      { ua: 'Полтава',     en: 'Poltava',      lat: 49.59, lon: 34.55 },
-    sumy:         { ua: 'Суми',        en: 'Sumy',         lat: 50.92, lon: 34.80 },
-    chernihiv:    { ua: 'Чернігів',    en: 'Chernihiv',    lat: 51.50, lon: 31.30 },
-    vinnytsia:    { ua: 'Вінниця',     en: 'Vinnytsia',    lat: 49.23, lon: 28.47 },
-    cherkasy:     { ua: 'Черкаси',     en: 'Cherkasy',     lat: 49.45, lon: 32.06 },
-    zhytomyr:     { ua: 'Житомир',     en: 'Zhytomyr',     lat: 50.25, lon: 28.67 },
-    rivne:        { ua: 'Рівне',       en: 'Rivne',        lat: 50.62, lon: 26.25 },
-    ivano_frank:  { ua: 'Івано-Фр.',   en: 'Ivano-Fr.',    lat: 48.92, lon: 24.71 },
-    ternopil:     { ua: 'Тернопіль',   en: 'Ternopil',     lat: 49.55, lon: 25.60 },
-    lutsk:        { ua: 'Луцьк',       en: 'Lutsk',        lat: 50.74, lon: 25.32 },
-    uzhhorod:     { ua: 'Ужгород',     en: 'Uzhhorod',     lat: 48.62, lon: 22.30 },
-    kryvyi_rih:   { ua: 'Кривий Ріг',  en: 'Kryvyi Rih',   lat: 47.91, lon: 33.38 },
-    khmelnitskyi: { ua: 'Хмельницький',en: 'Khmelnytskyi', lat: 49.42, lon: 27.00 },
-};
-
-let alertsTimer = null;
-let citiesCache = null;
-
-function lonLatToXY(lon, lat) {
-    const { lonMin, lonMax, latMin, latMax } = UA_BOUNDS;
-    const x = ((lon - lonMin) / (lonMax - lonMin)) * 1000;
-    // Y inverted because SVG grows downward
-    const y = (1 - (lat - latMin) / (latMax - latMin)) * 660;
-    return { x, y };
-}
-
-// ─── Map zoom / pan ───────────────────────────────────────────────────────────
-
-let mapVB = { x: 0, y: 0, w: 1000, h: 660 };
-const MAP_MIN_W = 220;
-
-function setMapViewBox() {
-    const svg = $('alerts-map');
-    if (svg) svg.setAttribute('viewBox', `${mapVB.x} ${mapVB.y} ${mapVB.w} ${mapVB.h}`);
-}
-
-function clientToSvgCoords(svg, cx, cy) {
-    const rect = svg.getBoundingClientRect();
-    return {
-        x: mapVB.x + (cx - rect.left) * (mapVB.w / rect.width),
-        y: mapVB.y + (cy - rect.top)  * (mapVB.h / rect.height),
-    };
-}
-
-function mapZoom(scaleFactor, pivotX, pivotY) {
-    const newW = Math.max(MAP_MIN_W, Math.min(1000, mapVB.w * scaleFactor));
-    const newH = newW * (660 / 1000);
-    mapVB.x = Math.max(0, Math.min(1000 - newW, mapVB.x + (pivotX - mapVB.x) * (1 - newW / mapVB.w)));
-    mapVB.y = Math.max(0, Math.min(660  - newH, mapVB.y + (pivotY - mapVB.y) * (1 - newH / mapVB.h)));
-    mapVB.w = newW;
-    mapVB.h = newH;
-    setMapViewBox();
-}
-
-function initMapInteraction() {
-    const svg = $('alerts-map');
-    if (!svg || svg._interactionBound) return;
-    svg._interactionBound = true;
-
-    // Wheel zoom
-    svg.addEventListener('wheel', e => {
-        e.preventDefault();
-        const p = clientToSvgCoords(svg, e.clientX, e.clientY);
-        mapZoom(e.deltaY > 0 ? 1.18 : 0.85, p.x, p.y);
-    }, { passive: false });
-
-    // Touch / pointer pan + pinch
-    const ptrs = new Map();
-    let panStart = null;
-    let pinchDist0 = null;
-
-    function getPointerPair() {
-        const [a, b] = [...ptrs.values()];
-        return { cx: (a.x + b.x) / 2, cy: (a.y + b.y) / 2, dist: Math.hypot(a.x - b.x, a.y - b.y) };
-    }
-
-    svg.addEventListener('pointerdown', e => {
-        svg.setPointerCapture(e.pointerId);
-        ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
-        if (ptrs.size === 1) {
-            panStart = { cx: e.clientX, cy: e.clientY, vbX: mapVB.x, vbY: mapVB.y };
-            pinchDist0 = null;
-        } else if (ptrs.size === 2) {
-            pinchDist0 = getPointerPair().dist;
-            panStart = null;
-        }
-        svg.classList.add('dragging');
-    });
-
-    svg.addEventListener('pointermove', e => {
-        if (!ptrs.has(e.pointerId)) return;
-        ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
-
-        if (ptrs.size === 2 && pinchDist0 !== null) {
-            const pair = getPointerPair();
-            const scale = pinchDist0 / pair.dist;
-            pinchDist0 = pair.dist;
-            const p = clientToSvgCoords(svg, pair.cx, pair.cy);
-            mapZoom(scale, p.x, p.y);
-        } else if (ptrs.size === 1 && panStart) {
-            const rect = svg.getBoundingClientRect();
-            const scaleX = mapVB.w / rect.width;
-            const scaleY = mapVB.h / rect.height;
-            const dx = (e.clientX - panStart.cx) * scaleX;
-            const dy = (e.clientY - panStart.cy) * scaleY;
-            mapVB.x = Math.max(0, Math.min(1000 - mapVB.w, panStart.vbX - dx));
-            mapVB.y = Math.max(0, Math.min(660  - mapVB.h, panStart.vbY - dy));
-            setMapViewBox();
-        }
-    });
-
-    function onPointerUp(e) {
-        ptrs.delete(e.pointerId);
-        if (ptrs.size < 2) pinchDist0 = null;
-        if (ptrs.size === 0) { panStart = null; svg.classList.remove('dragging'); }
-    }
-    svg.addEventListener('pointerup',     onPointerUp);
-    svg.addEventListener('pointercancel', onPointerUp);
-}
-
-$('map-zoom-reset')?.addEventListener('click', () => {
-    mapVB = { x: 0, y: 0, w: 1000, h: 660 };
-    setMapViewBox();
-    if (tg) tg.HapticFeedback?.impactOccurred('light');
-});
-$('map-zoom-in')?.addEventListener('click', () => {
-    mapZoom(0.68, mapVB.x + mapVB.w / 2, mapVB.y + mapVB.h / 2);
-    if (tg) tg.HapticFeedback?.impactOccurred('light');
-});
-$('map-zoom-out')?.addEventListener('click', () => {
-    mapZoom(1.45, mapVB.x + mapVB.w / 2, mapVB.y + mapVB.h / 2);
-    if (tg) tg.HapticFeedback?.impactOccurred('light');
-});
-
-// ─── Threat detail popup ──────────────────────────────────────────────────────
-
-let _threatObjects = [];
-
-function showThreatPopup(o) {
-    const meta = KIND_META[o.kind] || KIND_META.drone_piston;
-    const icon = KIND_ICONS[o.kind] || KIND_ICONS.drone_piston;
-    const kindName = meta[lang] || meta.ua;
-    const fromZone = ZONE_LABELS[o.from_zone] || o.from_zone || '?';
-    const toCity = citiesCache?.[o.to_city]?.ua || o.to_city || '?';
-    const speed = o.speed_kmh || meta.speed;
-    const heading = o.heading_deg != null ? `${o.heading_deg}°` : null;
-    const statusLabel = o.status === 'eliminated' ? '💥 Збито' : o.status === 'lost' ? '? Втрачено' : '🔴 Активний';
-
-    $('threat-popup-icon').innerHTML = icon;
-    $('threat-popup-name').textContent = o.title || kindName;
-    $('threat-popup-route').innerHTML =
-        `<span>${esc(fromZone)}</span><span style="opacity:0.5">→</span><span>${esc(toCity)}</span>`;
-    $('threat-popup-tags').innerHTML = [
-        `<span class="popup-tag popup-tag-speed">${speed} км/г</span>`,
-        `<span class="popup-tag popup-tag-status">${statusLabel}</span>`,
-        heading ? `<span class="popup-tag popup-tag-heading">↗ ${esc(heading)}</span>` : '',
-    ].join('');
-
-    $('threat-popup').hidden = false;
-    if (tg) tg.HapticFeedback?.impactOccurred('light');
-}
-
-$('threat-popup-close')?.addEventListener('click', () => {
-    $('threat-popup').hidden = true;
-});
-
-async function loadCities() {
-    if (citiesCache) return citiesCache;
-    try {
-        const data = await api('/api/alerts/cities');
-        citiesCache = data.cities || {};
-    } catch {
-        citiesCache = {};
-    }
-    return citiesCache;
-}
-
-async function loadAlerts() {
-    try {
-        const [current, attacks] = await Promise.all([
-            api('/api/alerts/current'),
-            api('/api/alerts/attacks?limit=5'),
-        ]);
-        await loadCities();
-        renderAlertsStatus(current);
-        renderAlertsMap(current);
-        renderAlertsStats(current, attacks);
-        renderThreatsList(current);
-        renderRecentAttacks(attacks);
-        updateNavIndicator(current);
-    } catch (e) {
-        console.warn('alerts load failed:', e);
-        $('alerts-status-title').textContent = '⚠️ ' + (lang === 'en' ? 'Unable to load' : 'Не вдалося завантажити');
-        $('alerts-status-sub').textContent = e.message || '';
-    }
-}
-
-function renderAlertsStatus(current) {
-    const box = $('alerts-status');
-    const active = current?.attack?.status === 'active' && (current?.objects?.length || 0) > 0;
-    box.classList.toggle('danger', active);
-    if (active) {
-        const objCount = current.objects.length;
-        $('alerts-status-title').textContent = lang === 'en' ? '⚠ Active attack' : lang === 'ru' ? '⚠ Активная атака' : '⚠ Активна атака';
-        $('alerts-status-sub').textContent =
-            (lang === 'en' ? `${objCount} object${objCount > 1 ? 's' : ''} in the air` :
-             lang === 'ru' ? `Объектов в воздухе: ${objCount}` :
-                              `Об'єктів у повітрі: ${objCount}`);
-    } else {
-        $('alerts-status-title').textContent = lang === 'en' ? 'All calm' : lang === 'ru' ? 'Спокойно' : 'Тихо';
-        $('alerts-status-sub').textContent =
-            lang === 'en' ? 'No active threats detected' :
-            lang === 'ru' ? 'Активных угроз нет' : 'Активних загроз не зафіксовано';
-    }
-}
-
-function renderAlertsMap(current) {
-    const cityG  = $('map-cities');
-    const threatG = $('map-threats');
-
-    // Reference cities
-    if (!cityG.dataset.populated) {
-        cityG.innerHTML = Object.entries(FALLBACK_CITIES).map(([key, c]) => {
-            const { x, y } = lonLatToXY(c.lon, c.lat);
-            const name = c[lang === 'en' ? 'en' : 'ua'];
-            return `<circle class="map-city" cx="${x}" cy="${y}" r="3"/>
-                    <text class="map-city-label" x="${x + 7}" y="${y + 4}">${esc(name)}</text>`;
-        }).join('');
-        cityG.dataset.populated = '1';
-    }
-
-    // Threats
-    const threats = (current?.objects || []).filter(o => o.status === 'active' && Number.isFinite(o.lat) && Number.isFinite(o.lon));
-    _threatObjects = threats;
-    threatG.innerHTML = threats.map((o, idx) => {
-        const { x, y } = lonLatToXY(o.lon, o.lat);
-        const trail = Array.isArray(o.trail) && o.trail.length > 1
-            ? `<polyline class="map-threat-trail" points="${o.trail.map(p => {
-                const xy = lonLatToXY(p[0], p[1]); return `${xy.x},${xy.y}`;
-              }).join(' ')}"/>`
-            : '';
-        return `<g class="map-threat" data-tidx="${idx}">
-            ${trail}
-            <circle class="map-threat-glow" cx="${x}" cy="${y}" r="12" fill="url(#tGlow)"/>
-            <circle class="map-threat-core" cx="${x}" cy="${y}" r="4"/>
-        </g>`;
-    }).join('');
-
-    // Wire click on each threat marker
-    threatG.querySelectorAll('.map-threat').forEach(el => {
-        el.addEventListener('click', e => {
-            e.stopPropagation();
-            const idx = +el.dataset.tidx;
-            if (_threatObjects[idx]) showThreatPopup(_threatObjects[idx]);
-        });
-    });
-
-    initMapInteraction();
-}
-
-function renderAlertsStats(current, attacksResp) {
-    const stats = $('alerts-stats');
-    const lastAttack = attacksResp?.attacks?.[0] || {};
-    const activeNow = (current?.objects || []).filter(o => o.status === 'active').length;
-    const items = [
-        { num: activeNow, label: lang === 'en' ? 'In air' : 'У повітрі', cls: activeNow > 0 ? 'danger' : '' },
-        { num: lastAttack.total_drones || 0,   label: lang === 'en' ? 'Drones' : 'Дронів',  cls: 'danger' },
-        { num: lastAttack.total_missiles || 0, label: lang === 'en' ? 'Missiles' : 'Ракет', cls: 'danger' },
-        { num: lastAttack.official_shot_total || 0, label: lang === 'en' ? 'Shot down' : 'Збито', cls: 'good' },
-    ];
-    stats.innerHTML = items.map(i => `
-        <div class="stat-card">
-            <div class="stat-num ${i.cls}">${i.num}</div>
-            <div class="stat-label">${esc(i.label)}</div>
-        </div>`).join('');
-}
-
-function renderThreatsList(current) {
-    const list = $('alerts-threats-list');
-    const threats = (current?.objects || []).filter(o => o.status === 'active');
-    $('alerts-count-badge').textContent = threats.length;
-
-    if (!threats.length) {
-        list.innerHTML = `<div class="alerts-empty">${esc(t('alerts_no_threats_long'))}</div>`;
-        return;
-    }
-
-    list.innerHTML = threats.slice(0, 30).map(o => {
-        const meta = KIND_META[o.kind] || KIND_META.drone_piston;
-        const icon = KIND_ICONS[o.kind] || KIND_ICONS.drone_piston;
-        const cls  = o.status === 'eliminated' ? 'eliminated' : o.status === 'lost' ? 'lost' : '';
-        const kindName = meta[lang] || meta.ua;
-        const fromZone = ZONE_LABELS[o.from_zone] || o.from_zone || '?';
-        const toCity = citiesCache?.[o.to_city]?.ua || o.to_city || '?';
-        const speed = o.speed_kmh || meta.speed;
-        return `<div class="threat-card active-threat">
-            <div class="threat-icon ${cls}">${icon}</div>
-            <div class="threat-info">
-                <div class="threat-name">${esc(o.title || kindName)}</div>
-                <div class="threat-route">
-                    <span>${esc(fromZone)}</span>
-                    <span class="threat-route-arrow">→</span>
-                    <span>${esc(toCity)}</span>
-                </div>
-            </div>
-            <div class="threat-right">
-                <div class="threat-speed">${speed} км/г</div>
-                <div class="threat-kind">${esc(kindName.split(' ')[0])}</div>
-            </div>
-        </div>`;
-    }).join('');
-}
-
-function renderRecentAttacks(attacksResp) {
-    const list = $('alerts-attacks-list');
-    const attacks = (attacksResp?.attacks || []).slice(0, 5);
-    if (!attacks.length) {
-        list.innerHTML = `<div class="alerts-empty">—</div>`;
-        return;
-    }
-    list.innerHTML = attacks.map(a => {
-        const d = new Date(a.started_at * 1000);
-        const dateStr = d.toLocaleDateString(lang === 'en' ? 'en-GB' : 'uk-UA', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' });
-        return `<div class="attack-card">
-            <div class="attack-date">${esc(dateStr)}</div>
-            <div class="attack-stats">
-                <span class="drones">◈ ${a.total_drones || 0}</span>
-                <span class="missiles">⚡ ${a.total_missiles || 0}</span>
-                <span class="shot">✓ ${a.official_shot_total || 0}</span>
-            </div>
-        </div>`;
-    }).join('');
-}
-
-function updateNavIndicator(current) {
-    const active = current?.attack?.status === 'active' && (current?.objects?.length || 0) > 0;
-    const ind = $('nav-alert-indicator');
-    if (ind) ind.hidden = !active;
-}
-
-function startAlertsAutoRefresh() {
-    stopAlertsAutoRefresh();
-    alertsTimer = setInterval(loadAlerts, 30_000);
-}
-function stopAlertsAutoRefresh() {
-    if (alertsTimer) clearInterval(alertsTimer);
-    alertsTimer = null;
-}
-
-$('alerts-refresh-btn')?.addEventListener('click', () => {
-    $('alerts-refresh-btn').classList.add('spin');
-    loadAlerts().finally(() => setTimeout(() => $('alerts-refresh-btn').classList.remove('spin'), 700));
-    if (tg) tg.HapticFeedback?.impactOccurred('light');
-});
-
-// Background ping every 60s to keep indicator fresh even outside alerts tab
-setInterval(async () => {
-    if (state.tab === 'alerts') return; // already auto-refreshing
-    try {
-        const c = await api('/api/alerts/current');
-        updateNavIndicator(c);
-    } catch { /* silent */ }
-}, 60_000);
 
 // ─── Orders ───────────────────────────────────────────────────────────────────
 
@@ -1601,6 +1209,7 @@ function handleQuickAction(action) {
 // ─── Tabs ──────────────────────────────────────────────────────────────────────
 
 function setTab(tab) {
+    if (tab === 'alerts') { location.href = 'alerts.html'; return; }
     state.tab = tab;
     document.body.dataset.tab = tab;
     $$('.view').forEach(v => v.classList.toggle('hidden', v.dataset.view !== tab));
@@ -1609,8 +1218,6 @@ function setTab(tab) {
     if (tab === 'catalog') { headerHidden = false; $('catalog-header')?.classList.remove('hide-scroll'); }
     if (tab === 'orders')   loadOrders();
     if (tab === 'settings') loadSettings();
-    if (tab === 'alerts')   { loadAlerts(); startAlertsAutoRefresh(); }
-    else                    stopAlertsAutoRefresh();
     if (tg) tg.HapticFeedback?.selectionChanged();
 }
 
@@ -1712,7 +1319,21 @@ $('search-input').addEventListener('input', e => {
 // ─── Init ─────────────────────────────────────────────────────────────────────
 
 applyLang();
-loadItems(true);
 
-// Prime alert indicator at startup
-api('/api/alerts/current').then(updateNavIndicator).catch(() => {});
+// Handle ?tab= URL param for navigation from alerts.html
+const _initTab = new URLSearchParams(location.search).get('tab');
+if (_initTab && ['orders', 'settings'].includes(_initTab)) setTab(_initTab);
+else loadItems(true);
+
+// Background ping: keep nav indicator dot fresh
+setInterval(() => {
+    if (!BACKEND_URL) return;
+    fetch(`${BACKEND_URL}/api/alerts/current`, { headers: authHeaders() })
+        .then(r => r.json())
+        .then(c => { const ind = $('nav-alert-indicator'); if (ind) ind.hidden = !(c?.attack?.status === 'active' && (c?.objects?.length||0) > 0); })
+        .catch(() => {});
+}, 60_000);
+if (BACKEND_URL) fetch(`${BACKEND_URL}/api/alerts/current`, { headers: authHeaders() })
+    .then(r => r.json())
+    .then(c => { const ind = $('nav-alert-indicator'); if (ind) ind.hidden = !(c?.attack?.status === 'active' && (c?.objects?.length||0) > 0); })
+    .catch(() => {});

@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="theme-color" content="#060608">
+    <title>Тривоги — Asset Market</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="rent.css">
+
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script>
+        window.BACKEND_URL = window.BACKEND_URL || 'https://robin-jeep-pantomime.ngrok-free.dev';
+    </script>
+</head>
+<body data-tab="alerts">
+
+<!-- ══════════════════ AMBIENT BACKGROUND ══════════════════ -->
+<canvas id="bg-canvas" aria-hidden="true"></canvas>
+<div class="glow-spot spot-1" aria-hidden="true"></div>
+<div class="glow-spot spot-2" aria-hidden="true"></div>
+
+<!-- ══════════════════ ALERTS / MAP ══════════════════ -->
+<section class="view" data-view="alerts">
+
+    <header class="alerts-hdr" id="alerts-header">
+        <div class="alerts-status-banner" id="alerts-status">
+            <div class="status-dot" id="status-dot"></div>
+            <div class="status-text">
+                <div class="status-title" id="alerts-status-title">Тихо</div>
+                <div class="status-sub"   id="alerts-status-sub">Активних загроз не зафіксовано</div>
+            </div>
+            <button class="icon-btn" id="alerts-refresh-btn" aria-label="Оновити">
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 12a9 9 0 019-9 9 9 0 016.4 2.6L21 8"/><path d="M21 3v5h-5"/>
+                    <path d="M21 12a9 9 0 01-9 9 9 9 0 01-6.4-2.6L3 16"/><path d="M3 21v-5h5"/>
+                </svg>
+            </button>
+        </div>
+    </header>
+
+    <main class="alerts-body">
+
+        <!-- MAP -->
+        <div class="map-container" id="map-container">
+            <div class="map-bg-glow"></div>
+
+            <svg id="alerts-map" class="alerts-map" viewBox="0 0 1000 660"
+                 preserveAspectRatio="xMidYMid meet" role="img" aria-label="Карта повітряних тривог України">
+                <defs>
+                    <!-- Threat glow -->
+                    <radialGradient id="tGlow" cx="50%" cy="50%" r="50%">
+                        <stop offset="0%"   stop-color="#ff2a2e" stop-opacity="0.9"/>
+                        <stop offset="100%" stop-color="#ff2a2e" stop-opacity="0"/>
+                    </radialGradient>
+                    <!-- Ukraine fill gradient -->
+                    <linearGradient id="uaFill" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%"   stop-color="#1c2a46" stop-opacity="0.72"/>
+                        <stop offset="50%"  stop-color="#162038" stop-opacity="0.60"/>
+                        <stop offset="100%" stop-color="#0e1520" stop-opacity="0.52"/>
+                    </linearGradient>
+                    <!-- Water fill gradient -->
+                    <linearGradient id="waterFill" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%"   stop-color="#091828" stop-opacity="0.88"/>
+                        <stop offset="100%" stop-color="#060e1c" stop-opacity="0.78"/>
+                    </linearGradient>
+                    <!-- Border glow filter -->
+                    <filter id="borderGlow" x="-5%" y="-5%" width="110%" height="110%">
+                        <feGaussianBlur stdDeviation="2.5" result="blur"/>
+                        <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+                    </filter>
+                    <!-- Threat drop-shadow -->
+                    <filter id="threatShadow" x="-50%" y="-50%" width="200%" height="200%">
+                        <feDropShadow dx="0" dy="0" stdDeviation="4" flood-color="#ff2a2e" flood-opacity="0.8"/>
+                    </filter>
+                    <!-- Ukraine clip — precise L-command outline (1991 borders, 66 anchor points) -->
+                    <clipPath id="uaClip">
+                        <path d="M 113,162 L 128,106 L 159,92 L 203,82 L 242,92 L 284,95
+                                 L 328,88 L 382,73 L 435,70 L 491,87 L 550,87 L 602,85
+                                 L 640,106 L 662,112 L 689,125 L 728,129 L 748,153 L 819,187
+                                 L 877,238 L 908,288 L 954,335 L 963,380 L 969,398 L 958,414
+                                 L 889,419 L 820,421 L 799,445 L 711,526 L 794,561 L 782,564
+                                 L 739,557 L 708,608 L 663,616 L 658,621 L 635,644 L 610,630
+                                 L 564,557 L 569,551 L 625,495 L 685,512 L 689,491 L 582,462
+                                 L 539,457 L 505,471 L 476,481 L 449,512 L 417,544 L 390,547
+                                 L 367,544 L 352,540 L 335,546 L 329,563 L 286,549 L 247,511
+                                 L 204,486 L 154,469 L 102,486 L 77,481 L 43,380 L 35,349
+                                 L 30,318 L 32,294 L 35,266 L 46,207 L 83,170 L 113,162 Z"/>
+                    </clipPath>
+                    <!-- Inner relief shading -->
+                    <radialGradient id="uaRelief" cx="46%" cy="40%" r="64%">
+                        <stop offset="0%"   stop-color="#2a3f66" stop-opacity="0.55"/>
+                        <stop offset="55%"  stop-color="#172741" stop-opacity="0.28"/>
+                        <stop offset="100%" stop-color="#0a111d" stop-opacity="0"/>
+                    </radialGradient>
+                    <!-- Coast drop-shadow into the sea -->
+                    <filter id="coastShadow" x="-12%" y="-12%" width="124%" height="124%">
+                        <feDropShadow dx="0" dy="2.5" stdDeviation="5" flood-color="#00060f" flood-opacity="0.7"/>
+                    </filter>
+                    <!-- Subtle graticule inside UA -->
+                    <pattern id="ua-grid" x="0" y="0" width="46" height="40" patternUnits="userSpaceOnUse">
+                        <path d="M 46 0 L 0 0 0 40" fill="none" stroke="rgba(150,180,230,0.04)" stroke-width="0.6"/>
+                    </pattern>
+                </defs>
+
+                <!-- Sea background -->
+                <rect width="1000" height="660" fill="#040912"/>
+
+                <!-- Black Sea — south of Ukrainian coast -->
+                <path class="map-black-sea"
+                      d="M 0,520 C 70,512 145,505 220,520 C 272,530 305,548 329,563
+                         L 335,546 L 352,540 L 367,544 L 390,547 L 417,544 L 449,512
+                         L 476,481 L 505,471 L 539,457 L 582,462 L 689,491 L 685,512
+                         L 625,495 L 564,557 L 569,551 L 610,630 L 635,644 L 658,621
+                         L 663,616 L 708,608 L 739,557 L 782,564 L 794,561
+                         C 868,548 938,542 1000,540 L 1000,660 L 0,660 Z"/>
+
+                <!-- Ukraine land body — precise L-command outline -->
+                <path class="ua-body" filter="url(#coastShadow)"
+                      d="M 113,162 L 128,106 L 159,92 L 203,82 L 242,92 L 284,95
+                         L 328,88 L 382,73 L 435,70 L 491,87 L 550,87 L 602,85
+                         L 640,106 L 662,112 L 689,125 L 728,129 L 748,153 L 819,187
+                         L 877,238 L 908,288 L 954,335 L 963,380 L 969,398 L 958,414
+                         L 889,419 L 820,421 L 799,445 L 711,526 L 794,561 L 782,564
+                         L 739,557 L 708,608 L 663,616 L 658,621 L 635,644 L 610,630
+                         L 564,557 L 569,551 L 625,495 L 685,512 L 689,491 L 582,462
+                         L 539,457 L 505,471 L 476,481 L 449,512 L 417,544 L 390,547
+                         L 367,544 L 352,540 L 335,546 L 329,563 L 286,549 L 247,511
+                         L 204,486 L 154,469 L 102,486 L 77,481 L 43,380 L 35,349
+                         L 30,318 L 32,294 L 35,266 L 46,207 L 83,170 L 113,162 Z"
+                      fill="url(#uaFill)"/>
+
+                <!-- Relief shading + graticule, clipped inside Ukraine -->
+                <rect x="0" y="0" width="1000" height="660" clip-path="url(#uaClip)" fill="url(#uaRelief)" class="ua-relief"/>
+                <rect x="0" y="0" width="1000" height="660" clip-path="url(#uaClip)" class="map-grid-overlay"/>
+
+                <!-- ── Oblast boundary network (25 oblasts) ── -->
+                <g class="map-oblasts" clip-path="url(#uaClip)">
+                    <path d="M 112,155 C 195,160 278,162 380,170"/>
+                    <path d="M 238,93 C 228,135 218,175 206,250"/>
+                    <path d="M 280,96 C 285,140 292,185 295,252"/>
+                    <path d="M 382,73 C 382,125 384,182 388,258"/>
+                    <path d="M 497,87 C 499,138 502,190 505,258"/>
+                    <path d="M 602,85 C 608,130 614,178 616,248"/>
+                    <path d="M 616,248 C 648,228 698,212 748,205"/>
+                    <path d="M 729,130 C 732,168 734,210 732,258"/>
+                    <path d="M 811,192 C 818,238 822,292 820,352"/>
+                    <path d="M 851,218 C 856,270 860,324 858,382"/>
+                    <path d="M 548,87 C 550,140 552,192 550,258"/>
+                    <path d="M 550,258 C 548,302 546,345 540,400"/>
+                    <path d="M 638,192 C 642,248 644,308 642,362"/>
+                    <path d="M 642,362 C 670,358 710,356 750,366"/>
+                    <path d="M 750,366 C 773,372 798,382 820,392"/>
+                    <path d="M 178,88 C 180,138 184,188 188,262"/>
+                    <path d="M 188,262 C 178,280 162,298 144,318"/>
+                    <path d="M 238,200 C 244,225 252,248 258,275"/>
+                    <path d="M 316,170 C 318,218 320,262 322,308"/>
+                    <path d="M 322,308 C 350,290 375,275 390,258"/>
+                    <path d="M 434,135 C 448,143 470,143 484,135"/>
+                    <path d="M 322,350 C 400,345 475,342 540,340"/>
+                    <path d="M 390,428 C 450,428 512,428 568,425"/>
+                    <path d="M 600,340 C 602,382 604,418 606,456"/>
+                    <path d="M 606,392 C 636,390 672,390 706,393"/>
+                </g>
+
+                <!-- Sea of Azov -->
+                <path class="map-azov-sea"
+                      d="M 711,526 Q 755,535 799,445 Q 854,432 889,419 L 958,414
+                         L 968,440 Q 926,480 860,526 Q 800,548 740,548 Z"/>
+
+                <!-- ── Rivers ── -->
+                <path class="map-river dnipro" fill="none"
+                      d="M 491,90 C 475,118 462,148 460,180
+                         C 458,225 476,265 530,295
+                         C 596,328 665,320 698,314
+                         C 712,348 668,390 624,418
+                         C 598,438 580,450 562,460"/>
+                <path class="map-river minor" fill="none"
+                      d="M 382,75 C 390,108 402,135 420,155 C 436,170 449,176 460,180"/>
+                <path class="map-river minor" fill="none"
+                      d="M 688,134 C 645,172 600,210 555,244 C 516,270 488,290 462,298"/>
+                <path class="map-river" fill="none"
+                      d="M 88,248 C 118,292 162,328 218,365
+                         C 282,408 350,448 410,476 C 430,486 443,493 450,499"/>
+                <path class="map-river" fill="none"
+                      d="M 298,205 C 330,262 375,328 424,390
+                         C 462,440 500,466 528,482"/>
+                <path class="map-river minor" fill="none"
+                      d="M 726,134 C 758,178 798,222 826,270
+                         C 850,310 856,348 848,380"/>
+
+                <!-- Perekop isthmus -->
+                <path class="ua-isthmus" d="M 625,495 L 689,491"/>
+
+                <!-- Ukraine border — soft glow -->
+                <path class="ua-border-glow"
+                      d="M 113,162 L 128,106 L 159,92 L 203,82 L 242,92 L 284,95
+                         L 328,88 L 382,73 L 435,70 L 491,87 L 550,87 L 602,85
+                         L 640,106 L 662,112 L 689,125 L 728,129 L 748,153 L 819,187
+                         L 877,238 L 908,288 L 954,335 L 963,380 L 969,398 L 958,414
+                         L 889,419 L 820,421 L 799,445 L 711,526 L 794,561 L 782,564
+                         L 739,557 L 708,608 L 663,616 L 658,621 L 635,644 L 610,630
+                         L 564,557 L 569,551 L 625,495 L 685,512 L 689,491 L 582,462
+                         L 539,457 L 505,471 L 476,481 L 449,512 L 417,544 L 390,547
+                         L 367,544 L 352,540 L 335,546 L 329,563 L 286,549 L 247,511
+                         L 204,486 L 154,469 L 102,486 L 77,481 L 43,380 L 35,349
+                         L 30,318 L 32,294 L 35,266 L 46,207 L 83,170 L 113,162 Z"/>
+                <!-- Ukraine border — crisp line -->
+                <path class="ua-border"
+                      d="M 113,162 L 128,106 L 159,92 L 203,82 L 242,92 L 284,95
+                         L 328,88 L 382,73 L 435,70 L 491,87 L 550,87 L 602,85
+                         L 640,106 L 662,112 L 689,125 L 728,129 L 748,153 L 819,187
+                         L 877,238 L 908,288 L 954,335 L 963,380 L 969,398 L 958,414
+                         L 889,419 L 820,421 L 799,445 L 711,526 L 794,561 L 782,564
+                         L 739,557 L 708,608 L 663,616 L 658,621 L 635,644 L 610,630
+                         L 564,557 L 569,551 L 625,495 L 685,512 L 689,491 L 582,462
+                         L 539,457 L 505,471 L 476,481 L 449,512 L 417,544 L 390,547
+                         L 367,544 L 352,540 L 335,546 L 329,563 L 286,549 L 247,511
+                         L 204,486 L 154,469 L 102,486 L 77,481 L 43,380 L 35,349
+                         L 30,318 L 32,294 L 35,266 L 46,207 L 83,170 L 113,162 Z"/>
+
+                <!-- ── Oblast name labels ── -->
+                <g class="map-oblast-labels" clip-path="url(#uaClip)">
+                    <text x="164" y="102">Волинь</text>
+                    <text x="248" y="128">Рівне</text>
+                    <text x="110" y="210">Львів</text>
+                    <text x="194" y="232">Тернопіль</text>
+                    <text x="138" y="284">Ів.-Фр.</text>
+                    <text x="52"  y="314">Закарп.</text>
+                    <text x="198" y="322">Чернівці</text>
+                    <text x="265" y="244">Хмельн.</text>
+                    <text x="330" y="180">Житомир</text>
+                    <text x="418" y="136">Київськ.</text>
+                    <text x="530" y="90">Чернігів</text>
+                    <text x="644" y="128">Суми</text>
+                    <text x="762" y="200">Харків</text>
+                    <text x="896" y="302">Луганськ</text>
+                    <text x="844" y="344">Донецьк</text>
+                    <text x="736" y="374">Запоріж.</text>
+                    <text x="674" y="322">Дніпро</text>
+                    <text x="544" y="312">Кіровогр.</text>
+                    <text x="630" y="238">Полтава</text>
+                    <text x="521" y="240">Черкаси</text>
+                    <text x="336" y="260">Вінниця</text>
+                    <text x="454" y="468">Одеса</text>
+                    <text x="522" y="432">Миколаїв</text>
+                    <text x="610" y="458">Херсон</text>
+                    <text x="648" y="558">Крим</text>
+                </g>
+
+                <!-- Kyiv capital marker -->
+                <g class="map-capital-group">
+                    <circle class="map-capital-ring" cx="460" cy="159" r="6"/>
+                    <circle class="map-capital-dot"  cx="460" cy="159" r="2.5"/>
+                    <text class="map-capital-label" x="469" y="163">Київ</text>
+                </g>
+
+                <!-- Water labels -->
+                <text class="map-water-label" x="292" y="612" text-anchor="middle"
+                      font-size="11" letter-spacing="1.8">ЧОРНЕ МОРЕ</text>
+                <text class="map-water-label" x="882" y="452" text-anchor="middle"
+                      font-size="7.5" letter-spacing="0.8">АЗОВСЬКЕ МОРЕ</text>
+
+                <!-- Compass rose -->
+                <g class="map-compass" transform="translate(958,46)">
+                    <circle r="20" fill="rgba(4,10,22,0.74)" stroke="rgba(140,170,235,0.20)" stroke-width="0.8"/>
+                    <line x1="0" y1="-14" x2="0" y2="-18" stroke="rgba(180,205,255,0.28)" stroke-width="0.8"/>
+                    <line x1="14" y1="0"  x2="18" y2="0"  stroke="rgba(180,205,255,0.28)" stroke-width="0.8"/>
+                    <line x1="0" y1="14"  x2="0" y2="18"  stroke="rgba(180,205,255,0.28)" stroke-width="0.8"/>
+                    <line x1="-14" y1="0" x2="-18" y2="0" stroke="rgba(180,205,255,0.28)" stroke-width="0.8"/>
+                    <polygon points="0,-15 3,-6 0,-10 -3,-6" fill="#d41115" opacity="0.94"/>
+                    <polygon points="0,15 3,6 0,10 -3,6"     fill="rgba(215,232,255,0.42)"/>
+                    <polygon points="-15,0 -6,3 -10,0 -6,-3" fill="rgba(215,232,255,0.22)"/>
+                    <polygon points="15,0 6,3 10,0 6,-3"     fill="rgba(215,232,255,0.22)"/>
+                    <text x="0" y="-22" text-anchor="middle" fill="rgba(195,215,255,0.65)"
+                          font-size="7" font-family="sans-serif" font-weight="800" letter-spacing="0.5">N</text>
+                </g>
+
+                <!-- Cities and threats (populated via JS) -->
+                <g id="map-cities"></g>
+                <g id="map-threats"></g>
+            </svg>
+
+            <!-- Map overlay controls -->
+            <div class="map-legend">
+                <span><i class="ldot red"></i><span>Загроза</span></span>
+                <span><i class="ldot blue"></i><span>Місто</span></span>
+                <span><i class="ldot river"></i><span>Дніпро</span></span>
+            </div>
+            <!-- Zoom controls -->
+            <div class="map-zoom-btns" role="group" aria-label="Масштаб карти">
+                <button class="map-zoom-btn" id="map-zoom-in"  aria-label="Збільшити">+</button>
+                <button class="map-zoom-btn" id="map-zoom-out" aria-label="Зменшити">−</button>
+            </div>
+            <button class="map-zoom-reset" id="map-zoom-reset" title="Скинути вид">
+                <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
+                    <path d="M3 12a9 9 0 019-9 9 9 0 016.4 2.6L21 8"/><path d="M21 3v5h-5"/>
+                    <path d="M21 12a9 9 0 01-9 9 9 9 0 01-6.4-2.6L3 16"/><path d="M3 21v-5h5"/>
+                </svg>
+            </button>
+            <div class="map-zoom-hint">Drag / Pinch / ± для зуму</div>
+
+            <!-- Threat detail popup -->
+            <div class="threat-popup" id="threat-popup" hidden>
+                <button class="threat-popup-close" id="threat-popup-close">×</button>
+                <div class="threat-popup-icon"    id="threat-popup-icon"></div>
+                <div class="threat-popup-content">
+                    <div class="threat-popup-name"  id="threat-popup-name"></div>
+                    <div class="threat-popup-route" id="threat-popup-route"></div>
+                    <div class="threat-popup-tags"  id="threat-popup-tags"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- STATS STRIP -->
+        <div class="alerts-stats" id="alerts-stats">
+            <div class="stat-card skeleton-stat"></div>
+            <div class="stat-card skeleton-stat"></div>
+            <div class="stat-card skeleton-stat"></div>
+            <div class="stat-card skeleton-stat"></div>
+        </div>
+
+        <!-- ACTIVE THREATS -->
+        <div class="alerts-section">
+            <div class="section-hdr">
+                <span class="section-title">Активні загрози</span>
+                <span class="count-chip" id="alerts-count-badge">0</span>
+            </div>
+            <div class="threats-list" id="alerts-threats-list">
+                <div class="threat-skeleton"></div>
+                <div class="threat-skeleton"></div>
+            </div>
+        </div>
+
+        <!-- RECENT ATTACKS -->
+        <div class="alerts-section">
+            <div class="section-hdr">
+                <span class="section-title">Останні атаки</span>
+            </div>
+            <div class="attacks-list" id="alerts-attacks-list">
+                <div class="attack-skeleton"></div>
+                <div class="attack-skeleton"></div>
+            </div>
+        </div>
+
+    </main>
+</section>
+
+<!-- ══════════════════ BOTTOM NAV ══════════════════ -->
+<nav class="bottom-nav" role="tablist">
+    <button class="nav-btn active nav-alerts" role="tab" aria-label="Тривоги">
+        <div class="nav-icon">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M6 8a6 6 0 0112 0c0 7 3 9 3 9H3s3-2 3-9"/>
+                <path d="M10 21a2 2 0 004 0"/>
+            </svg>
+        </div>
+        <span class="nav-label">Тривоги</span>
+    </button>
+    <button class="nav-btn" onclick="location.href='rent.html'" role="tab" aria-label="Каталог">
+        <div class="nav-icon">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="3" width="7" height="7" rx="1.5"/>
+                <rect x="14" y="3" width="7" height="7" rx="1.5"/>
+                <rect x="3" y="14" width="7" height="7" rx="1.5"/>
+                <rect x="14" y="14" width="7" height="7" rx="1.5"/>
+            </svg>
+        </div>
+        <span class="nav-label">Каталог</span>
+    </button>
+    <button class="nav-btn" onclick="location.href='rent.html?tab=orders'" role="tab" aria-label="Замовлення">
+        <div class="nav-icon">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M9 11l3 3L22 4"/>
+                <path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/>
+            </svg>
+        </div>
+        <span class="nav-label">Замовлення</span>
+    </button>
+    <button class="nav-btn" onclick="location.href='rent.html?tab=settings'" role="tab" aria-label="Профіль">
+        <div class="nav-icon">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="7" r="4"/>
+                <path d="M5 21v-1a7 7 0 0114 0v1"/>
+            </svg>
+        </div>
+        <span class="nav-label">Профіль</span>
+    </button>
+</nav>
+
+<!-- TOASTS -->
+<div class="toast-stack" id="toasts" aria-live="polite"></div>
+
+<script src="bg.js"></script>
+<script src="alerts.js"></script>
+</body>
+</html>
