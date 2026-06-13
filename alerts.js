@@ -316,6 +316,41 @@ function renderAlertsMap(current) {
     });
 
     initMapInteraction();
+    highlightOblasts(current);
+}
+
+// Oblast name → data-oblast value mapping
+const CITY_TO_OBLAST = {
+    kyiv:'kyiv', kharkiv:'kharkiv', odesa:'odesa', dnipro:'dnipro', lviv:'lviv',
+    zaporizhzhia:'zaporizhzhia', mykolaiv:'mykolaiv', kherson:'kherson',
+    poltava:'poltava', sumy:'sumy', chernihiv:'chernihiv', vinnytsia:'vinnytsia',
+    cherkasy:'cherkasy', zhytomyr:'zhytomyr', rivne:'rivne', ivano_frank:'ivano-frankivsk',
+    ternopil:'ternopil', lutsk:'volyn', uzhhorod:'zakarpattia', kryvyi_rih:'dnipro',
+    khmelnitskyi:'khmelnytskyi',
+    luhansk:'luhansk', donetsk:'donetsk', crimea:'crimea', sevastopol:'crimea',
+};
+
+function highlightOblasts(current) {
+    document.querySelectorAll('.map-oblast').forEach(el => {
+        el.classList.remove('alert-active', 'alert-partial');
+    });
+    const threats = (current?.objects || []).filter(o => o.status === 'active');
+    const activeSet = new Set();
+    const partialSet = new Set();
+    threats.forEach(o => {
+        const oblastKey = CITY_TO_OBLAST[o.to_city] || CITY_TO_OBLAST[o.to_region];
+        if (oblastKey) activeSet.add(oblastKey);
+        const fromKey = CITY_TO_OBLAST[o.from_zone];
+        if (fromKey) partialSet.add(fromKey);
+    });
+    activeSet.forEach(k => {
+        const el = document.querySelector(`.map-oblast[data-oblast="${k}"]`);
+        if (el) el.classList.add('alert-active');
+    });
+    partialSet.forEach(k => {
+        const el = document.querySelector(`.map-oblast[data-oblast="${k}"]`);
+        if (el && !activeSet.has(k)) el.classList.add('alert-partial');
+    });
 }
 
 function renderAlertsStats(current, attacksResp) {
