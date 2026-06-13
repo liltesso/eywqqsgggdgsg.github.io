@@ -611,6 +611,15 @@ body {
     background: var(--accent-2); box-shadow: 0 0 14px var(--accent-glow);
 }
 .alerts-status-banner.danger .status-dot::after { background: var(--accent-2); animation-duration: 1.4s; }
+.alerts-status-banner.offline {
+    background: linear-gradient(135deg, rgba(80,80,100,0.12), rgba(80,80,100,0.03));
+    border-color: rgba(120,120,150,0.22);
+}
+.alerts-status-banner.offline .status-dot {
+    background: #555566; box-shadow: none; animation: none;
+}
+.alerts-status-banner.offline .status-dot::after { display: none; }
+.alerts-status-banner.offline .status-title { color: #8888aa; }
 
 .status-text { flex: 1; min-width: 0; }
 .status-title {

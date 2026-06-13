@@ -235,30 +235,39 @@ async function loadCities() {
 }
 
 async function loadAlerts() {
+    let current = null, attacks = null, fetchOk = false;
     try {
-        const [current, attacks] = await Promise.all([
+        [current, attacks] = await Promise.all([
             apiFetch('/api/alerts/current'),
             apiFetch('/api/alerts/attacks?limit=5'),
         ]);
         await loadCities();
-        renderAlertsStatus(current);
-        renderAlertsMap(current);
-        renderAlertsStats(current, attacks);
-        renderThreatsList(current);
-        renderRecentAttacks(attacks);
+        fetchOk = true;
     } catch (e) {
         console.warn('alerts load failed:', e);
+    }
+
+    // Always render map/stats (with empty data if offline)
+    renderAlertsStatus(current);
+    renderAlertsMap(current);
+    renderAlertsStats(current, attacks);
+    renderThreatsList(current);
+    renderRecentAttacks(attacks);
+
+    if (!fetchOk) {
+        const box   = $('alerts-status');
         const title = $('alerts-status-title');
         const sub   = $('alerts-status-sub');
-        if (title) title.textContent = '⚠ ' + (lang === 'en' ? 'Unable to load' : 'Не вдалося завантажити');
-        if (sub)   sub.textContent   = e.message || '';
+        if (box)   { box.classList.remove('danger'); box.classList.add('offline'); }
+        if (title) title.textContent = lang === 'en' ? 'Offline' : 'Офлайн';
+        if (sub)   sub.textContent   = lang === 'en' ? 'No connection to server' : 'Немає зв\'язку з сервером';
     }
 }
 
 function renderAlertsStatus(current) {
     const box    = $('alerts-status');
     const active = current?.attack?.status === 'active' && (current?.objects?.length || 0) > 0;
-    if (box) box.classList.toggle('danger', active);
+    if (box) { box.classList.toggle('danger', active); box.classList.remove('offline'); }
     if (active) {
         const cnt = current.objects.length;
         $('alerts-status-title').textContent =
