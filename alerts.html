@@ -72,6 +72,23 @@
                         <feGaussianBlur stdDeviation="2.5" result="blur"/>
                         <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
                     </filter>
+                    <!-- PNG map → dark navy filter
+                         White bg (V=1.0) → #000 (clamped, invisible)
+                         Light grey fill (V≈0.85) → #112038 navy
+                         Border grey (V≈0.72) → #2e508a blue line -->
+                    <filter id="mapImgFilter" color-interpolation-filters="sRGB"
+                            x="0%" y="0%" width="100%" height="100%">
+                        <feColorMatrix type="matrix" values="
+                            -0.88  0  0  0  0.815
+                            -1.44  0  0  0  1.340
+                            -2.48  0  0  0  2.341
+                             0     0  0  1  0"/>
+                    </filter>
+                    <!-- Alert-glow for oblast image overlay -->
+                    <filter id="oblaGlow" x="-10%" y="-10%" width="120%" height="120%">
+                        <feGaussianBlur stdDeviation="6" result="b"/>
+                        <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+                    </filter>
                     <!-- Threat drop-shadow -->
                     <filter id="threatShadow" x="-50%" y="-50%" width="200%" height="200%">
                         <feDropShadow dx="0" dy="0" stdDeviation="4" flood-color="#ff2a2e" flood-opacity="0.8"/>
@@ -118,7 +135,7 @@
                          L 663,616 L 708,608 L 739,557 L 782,564 L 794,561
                          C 868,548 938,542 1000,540 L 1000,660 L 0,660 Z"/>
 
-                <!-- Ukraine land body — precise L-command outline -->
+                <!-- Ukraine land body — dark base fill (fallback when PNG not loaded) -->
                 <path class="ua-body" filter="url(#coastShadow)"
                       d="M 113,162 L 128,106 L 159,92 L 203,82 L 242,92 L 284,95
                          L 328,88 L 382,73 L 435,70 L 491,87 L 550,87 L 602,85
@@ -132,6 +149,17 @@
                          L 204,486 L 154,469 L 102,486 L 77,481 L 43,380 L 35,349
                          L 30,318 L 32,294 L 35,266 L 46,207 L 83,170 L 113,162 Z"
                       fill="url(#uaFill)"/>
+
+                <!-- PNG map image — grey oblasts converted to dark navy via filter.
+                     Save the reference ukraine-map.png to project root.
+                     preserveAspectRatio="none" fills SVG exactly (minor horizontal compression ~15% accepted). -->
+                <image href="ukraine-map.png"
+                       x="0" y="0" width="1000" height="660"
+                       preserveAspectRatio="none"
+                       filter="url(#mapImgFilter)"
+                       clip-path="url(#uaClip)"
+                       class="ua-map-img"
+                       onerror="this.style.display='none'"/>
 
                 <!-- Relief shading + graticule, clipped inside Ukraine -->
                 <rect x="0" y="0" width="1000" height="660" clip-path="url(#uaClip)" fill="url(#uaRelief)" class="ua-relief"/>
@@ -222,40 +250,47 @@
                          L 204,486 L 154,469 L 102,486 L 77,481 L 43,380 L 35,349
                          L 30,318 L 32,294 L 35,266 L 46,207 L 83,170 L 113,162 Z"/>
 
-                <!-- ── Oblast name labels ── -->
+                <!-- ── Oblast + city labels ── -->
                 <g class="map-oblast-labels" clip-path="url(#uaClip)">
-                    <text x="164" y="102">Волинь</text>
-                    <text x="248" y="128">Рівне</text>
-                    <text x="110" y="210">Львів</text>
-                    <text x="194" y="232">Тернопіль</text>
-                    <text x="138" y="284">Ів.-Фр.</text>
-                    <text x="52"  y="314">Закарп.</text>
-                    <text x="198" y="322">Чернівці</text>
-                    <text x="265" y="244">Хмельн.</text>
-                    <text x="330" y="180">Житомир</text>
-                    <text x="418" y="136">Київськ.</text>
-                    <text x="530" y="90">Чернігів</text>
-                    <text x="644" y="128">Суми</text>
-                    <text x="762" y="200">Харків</text>
-                    <text x="896" y="302">Луганськ</text>
-                    <text x="844" y="344">Донецьк</text>
-                    <text x="736" y="374">Запоріж.</text>
-                    <text x="674" y="322">Дніпро</text>
-                    <text x="544" y="312">Кіровогр.</text>
-                    <text x="630" y="238">Полтава</text>
-                    <text x="521" y="240">Черкаси</text>
-                    <text x="336" y="260">Вінниця</text>
-                    <text x="454" y="468">Одеса</text>
-                    <text x="522" y="432">Миколаїв</text>
-                    <text x="610" y="458">Херсон</text>
-                    <text x="648" y="558">Крим</text>
+                    <!-- Western -->
+                    <text x="82"  y="58">Волинь</text>
+                    <text x="153" y="46">Рівне</text>
+                    <text x="45"  y="120">Львів</text>
+                    <text x="116" y="197">Тернопіль</text>
+                    <text x="42"  y="232">Ів.-Фр.</text>
+                    <text x="48"  y="267">Закарп.</text>
+                    <text x="110" y="265">Чернівці</text>
+                    <!-- Central-west -->
+                    <text x="168" y="152">Хмельн.</text>
+                    <text x="218" y="96">Житомир</text>
+                    <text x="234" y="184">Вінниця</text>
+                    <!-- Central -->
+                    <text x="320" y="52">Київськ.</text>
+                    <text x="486" y="32">Чернігів</text>
+                    <text x="512" y="178">Черкаси</text>
+                    <text x="458" y="220">Кіровогр.</text>
+                    <!-- North-east -->
+                    <text x="606" y="86">Суми</text>
+                    <text x="660" y="170">Полтава</text>
+                    <text x="720" y="130">Харків</text>
+                    <!-- East -->
+                    <text x="836" y="232">Луганськ</text>
+                    <text x="800" y="310">Донецьк</text>
+                    <!-- South-east -->
+                    <text x="698" y="318">Дніпро</text>
+                    <text x="680" y="380">Запоріж.</text>
+                    <!-- South -->
+                    <text x="310" y="360">Одеса</text>
+                    <text x="440" y="370">Миколаїв</text>
+                    <text x="540" y="376">Херсон</text>
+                    <text x="498" y="516">Крим</text>
                 </g>
 
                 <!-- Kyiv capital marker -->
                 <g class="map-capital-group">
-                    <circle class="map-capital-ring" cx="460" cy="159" r="6"/>
-                    <circle class="map-capital-dot"  cx="460" cy="159" r="2.5"/>
-                    <text class="map-capital-label" x="469" y="163">Київ</text>
+                    <circle class="map-capital-ring" cx="461" cy="163" r="7"/>
+                    <circle class="map-capital-dot"  cx="461" cy="163" r="2.8"/>
+                    <text class="map-capital-label" x="472" y="168">Київ</text>
                 </g>
 
                 <!-- Water labels -->

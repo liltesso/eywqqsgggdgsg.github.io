@@ -1740,34 +1740,36 @@ body {
     stroke-linecap: round;
     pointer-events: none;
 }
-/* Filled oblast polygons */
+/* Oblast polygons — transparent by default, highlight only on alerts */
 .map-oblast {
-    fill: rgba(18,38,80,0.28);
-    stroke: rgba(120,160,230,0.22);
-    stroke-width: 0.8;
-    stroke-dasharray: none;
-    transition: fill 0.35s, stroke 0.35s;
+    fill: rgba(0,0,0,0);
+    stroke: none;
+    stroke-width: 0;
+    transition: fill 0.4s ease, stroke 0.4s ease, filter 0.4s ease;
     pointer-events: all;
     cursor: pointer;
 }
 .map-oblast:hover {
-    fill: rgba(40,80,160,0.38);
-    stroke: rgba(140,180,255,0.45);
+    fill: rgba(60,110,200,0.12);
 }
 .map-oblast.alert-active {
-    fill: rgba(220,40,40,0.28);
-    stroke: rgba(255,80,80,0.55);
-    stroke-width: 1.2;
+    fill: rgba(220,35,35,0.38);
+    stroke: rgba(255,70,70,0.65);
+    stroke-width: 1.5;
+    filter: url(#oblaGlow);
 }
 .map-oblast.alert-partial {
-    fill: rgba(200,130,30,0.22);
-    stroke: rgba(240,170,50,0.45);
+    fill: rgba(210,130,20,0.28);
+    stroke: rgba(245,170,40,0.55);
     stroke-width: 1.0;
 }
 .map-oblast.crimea {
-    fill: rgba(12,28,60,0.22);
-    stroke: rgba(100,130,200,0.18);
-    stroke-dasharray: 3 4;
+    fill: rgba(0,0,0,0);
+}
+/* PNG map image base layer */
+.ua-map-img {
+    opacity: 1;
+    mix-blend-mode: normal;
 }
 /* Crimea isthmus (Perekop) — subtle internal divider, fully Ukrainian */
 .ua-isthmus {
@@ -1794,14 +1796,18 @@ body {
 }
 /* Oblast name labels */
 .map-oblast-labels text {
-    fill: rgba(158,188,245,0.46);
-    font-size: 7px;
+    fill: rgba(185,210,255,0.62);
+    font-size: 8.5px;
     font-family: var(--font-uk), var(--font-en), sans-serif;
-    font-weight: 600;
-    letter-spacing: 0.1px;
+    font-weight: 700;
+    letter-spacing: 0.15px;
     pointer-events: none;
     text-anchor: middle;
     dominant-baseline: middle;
+    paint-order: stroke fill;
+    stroke: rgba(5,10,25,0.7);
+    stroke-width: 2.5px;
+    stroke-linejoin: round;
 }
 /* Kyiv capital marker */
 .map-capital-ring {
