@@ -672,7 +672,7 @@ body {
 .alerts-map.dragging { cursor: grabbing; }
 
 /* SVG map elements */
-.ua-body { stroke: rgba(120,160,235,0.18); stroke-width: 0.5; }
+.ua-body { stroke: none; }
 .ua-relief { pointer-events: none; mix-blend-mode: screen; opacity: 0.9; }
 .ua-border-glow {
     fill: none;
@@ -707,11 +707,7 @@ body {
     fill: #3b9eff; opacity: 0.55;
     filter: drop-shadow(0 0 3px rgba(59,158,255,0.6));
 }
-.map-city-label {
-    fill: rgba(255,255,255,0.50);
-    font-size: 10px; font-family: var(--font-en); font-weight: 600;
-    pointer-events: none;
-}
+.map-city-label { display: none; }
 .map-threat { cursor: pointer; transform-box: fill-box; }
 .map-threat-glow { animation: threatPulse 1.8s infinite ease-out; }
 @keyframes threatPulse {
