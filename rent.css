@@ -1794,9 +1794,7 @@ body {
 .map-oblast.crimea {
     fill: rgba(0,0,0,0);
 }
-.ua-map-img {
-    filter: hue-rotate(165deg) saturate(0.65) brightness(0.48) contrast(1.1);
-}
+.ua-map-img { opacity: 1; }
 /* Crimea isthmus (Perekop) — subtle internal divider, fully Ukrainian */
 .ua-isthmus {
     fill: none;
