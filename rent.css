@@ -2462,6 +2462,24 @@ body {
 /* ── Load more ───────────────────────────────────────── */
 .load-more-btn { border-radius: 24px; font-size: 12.5px; }
 
+/* ── z-index fix: header and tabs above everything ───── */
+.r-header { z-index: 40; position: sticky; top: 0; }
+.r-mode-tabs { position: relative; z-index: 2; }
+.r-filters-row { position: relative; z-index: 2; }
+.alerts-hdr { z-index: 40; }
+
+/* ── Price row always visible ────────────────────────── */
+.gift-card-price-row { display: flex !important; }
+.gift-card-ton { color: var(--ton-2); }
+
+/* ── Filter section icons ────────────────────────────── */
+.fs-section-icon { font-size: 16px; flex-shrink: 0; }
+.fs-row-icon { font-size: 14px; flex-shrink: 0; }
+
+/* ── Smaller NFT card images ─────────────────────────── */
+.gift-card-img-wrap { padding-top: 82%; }
+.gift-card-img { object-fit: contain; padding: 6px; }
+
 /* ── Touch: reset hover background on tap ────────────── */
 @media (hover: none) {
     .gift-card:hover { transform: none; }

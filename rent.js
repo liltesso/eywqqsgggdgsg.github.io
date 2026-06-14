@@ -17,7 +17,7 @@ const TR = {
         popular:'Популярні', cheaper:'Дешевші', pricier:'Дорожчі', longer:'Довший термін',
         search:'Пошук подарунків…', load_more:'Завантажити ще',
         rent_btn:'Орендувати', buy_btn:'Купити',
-        total:'Разом', rent_days:'Термін оренди',
+        total:'Разом', rent_days:'Термін',
         ton_payment:'Оплата TON',
         connect_wallet:'Підключити гаманець', disconnect_wallet:'Від\'єднати гаманець',
         ton_wallet:'TON-гаманець',
@@ -258,6 +258,13 @@ async function api(path, options = {}) {
     try { body = await res.json(); } catch { /* empty */ }
     if (!res.ok) {
         const msg = body?.error?.message || body?.detail || `HTTP ${res.status}`;
+        if (res.status === 401 && /init data|telegram/i.test(msg) && !tg?.initData) {
+            const err = new Error(lang === 'en'
+                ? 'Please open this app inside Telegram'
+                : 'Відкрийте цей застосунок у Telegram');
+            err.status = 401;
+            throw err;
+        }
         const err = new Error(msg);
         err.code = body?.error?.code;
         err.status = res.status;
@@ -581,6 +588,7 @@ function buildFilterSheet() {
         return state.items.filter(g => g[field] === val).length;
     }
 
+    const SEC_ICONS = { collection: '\u{1F3AD}', model: '\u{1F381}', backdrop: '\u{1F308}', symbol: '\u{2728}' };
     const sections = [
         { key: 'collection', field: 'collection_name', label: t('collection'), opts: state.filterOptions.collections },
         { key: 'model',      field: 'model',           label: t('model'),      opts: state.filterOptions.models      },
@@ -635,6 +643,7 @@ function buildFilterSheet() {
         const active = state.filters[sec.key];
         html += `<div class="fs-section${active !== null ? ' open' : ''}">
             <button class="fs-section-hdr" type="button" data-sec="${esc(sec.key)}">
+                <span class="fs-section-icon">${SEC_ICONS[sec.key] || ''}</span>
                 <span class="fs-section-name">${esc(sec.label)}</span>
                 ${active !== null ? `<span class="fs-section-badge">1</span>` : ''}
                 <svg class="fs-chevron" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
@@ -651,9 +660,11 @@ function buildFilterSheet() {
                 ${sec.opts.map(val => {
                     const cnt = countFor(sec.field, val);
                     const sel = active === val;
+                    const ico = SEC_ICONS[sec.key] || '';
                     return `<label class="fs-row-item">
                         <div class="fs-row-left">
                             <div class="fs-chk${sel ? ' checked' : ''}"></div>
+                            <span class="fs-row-icon">${ico}</span>
                             <span class="fs-row-label">${esc(val)}</span>
                         </div>
                         <span class="fs-row-count">${cnt}</span>
@@ -1113,7 +1124,12 @@ async function loadSettings() {
     if (user) {
         $('user-name').textContent = user.first_name + (user.last_name ? ` ${user.last_name}` : '');
         $('user-uid').textContent  = user.username ? `@${user.username}` : `id ${user.id}`;
-        $('user-avatar').textContent = (user.first_name || '?').charAt(0).toUpperCase();
+        const avatar = $('user-avatar');
+        if (user.photo_url) {
+            avatar.innerHTML = `<img src="${esc(user.photo_url)}" style="width:100%;height:100%;border-radius:50%;object-fit:cover" alt="">`;
+        } else {
+            avatar.textContent = (user.first_name || '?').charAt(0).toUpperCase();
+        }
     }
     refreshWalletUi();
     try {

@@ -50,12 +50,16 @@ async def telegram_webhook(
 
     # 2. /start -> open the Mini App.
     if (message.get("text") or "").startswith("/start"):
-        await send_webapp_button(
-            message["chat"]["id"],
-            MINI_APP_URL,
-            "<b>Merchant Partners</b> — оренда та купівля Telegram-подарунків.\n\n"
-            "Тисни кнопку нижче, щоб відкрити вітрину 👇",
-        )
+        try:
+            await send_webapp_button(
+                message["chat"]["id"],
+                MINI_APP_URL,
+                "<b>Merchant Partners</b> — оренда та купівля Telegram-подарунків.\n\n"
+                "Тисни кнопку нижче, щоб відкрити вітрину 👇",
+            )
+        except RuntimeError as exc:
+            import logging
+            logging.getLogger(__name__).warning("send_webapp_button failed: %s", exc)
         return {"ok": True}
 
     # 3. Successful payment.
