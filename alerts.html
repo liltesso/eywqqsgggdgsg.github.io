@@ -62,6 +62,14 @@
                     <filter id="threatShadow" x="-50%" y="-50%" width="200%" height="200%">
                         <feDropShadow dx="0" dy="0" stdDeviation="4" flood-color="#ff2a2e" flood-opacity="0.8"/>
                     </filter>
+                    <!-- Converts green (#8AB500) PNG → dark navy (#162440), white borders → #8aaedd -->
+                    <filter id="mapImgFilter" color-interpolation-filters="sRGB" x="0%" y="0%" width="100%" height="100%">
+                        <feColorMatrix type="matrix" values="
+                            0.607  0.607  0  0  -0.673
+                            0.722  0.722  0  0  -0.763
+                            0.822  0.822  0  0  -0.778
+                            0      0      0  1   0"/>
+                    </filter>
                     <clipPath id="uaClip">
                         <path d="M 113,162 L 128,106 L 159,92 L 203,82 L 242,92 L 284,95
                                  L 328,88 L 382,73 L 435,70 L 491,87 L 550,87 L 602,85
@@ -85,6 +93,7 @@
                        x="0" y="0" width="1000" height="660"
                        preserveAspectRatio="xMidYMid meet"
                        clip-path="url(#uaClip)"
+                       filter="url(#mapImgFilter)"
                        class="ua-map-img"
                        onerror="this.style.display='none'"/>
 
