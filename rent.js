@@ -28,7 +28,7 @@ const TR = {
         topup_title:'💳 Як поповнити гаманець',
         topup_desc:'Переведіть TON на адресу або купіть через Tonkeeper / @wallet',
         copy_addr:'Скопіювати адресу',
-        great:'Чудово!', about:'Про сервіс', network:'Мережа', fee:'Комісія',
+        great:'Чудово!', about:'Про сервіс', network:'Мережа',
         language_label:'Мова',
         err_no_backend:'BACKEND_URL не задано — додайте window.BACKEND_URL у rent.html',
         err_marketapp_setup:'Налаштуйте MarketApp: зайдіть на marketapp.ws, підключіть гаманець і вручну орендуйте будь-який NFT.',
@@ -47,7 +47,7 @@ const TR = {
         faq:'Часті запитання', how_it_works:'Як це працює',
         provider:'Постачальник', data_source:'Джерело даних',
         about_desc:'Asset Market — маркетплейс для оренди та купівлі колекційних Telegram-подарунків (NFT) у мережі TON. Оплата здійснюється напряму з вашого гаманця, а подарунок зараховується на акаунт одразу після підтвердження транзакції в блокчейні.',
-        version_label:'Версія', copied:'Скопійовано', refreshed:'Оновлено',
+        copied:'Скопійовано', refreshed:'Оновлено',
         price_range:'Ціна, TON', discount_only:'Лише зі знижкою', sort_label:'Сортування',
         from_label:'від', to_label:'до', any:'Будь-яка', wallet_balance:'Баланс гаманця',
         ton_note:'NFT зараховується на ваш акаунт одразу після підтвердження транзакції в мережі TON.',
@@ -73,7 +73,7 @@ const TR = {
         topup_title:'💳 How to top up',
         topup_desc:'Transfer TON to the address below or buy via Tonkeeper / @wallet',
         copy_addr:'Copy address',
-        great:'Great!', about:'About', network:'Network', fee:'Fee',
+        great:'Great!', about:'About', network:'Network',
         language_label:'Language',
         err_no_backend:'BACKEND_URL is not set — add window.BACKEND_URL to rent.html',
         err_marketapp_setup:'Setup required: go to marketapp.ws, connect your wallet, and manually rent any NFT first.',
@@ -92,7 +92,7 @@ const TR = {
         faq:'FAQ', how_it_works:'How it works',
         provider:'Provider', data_source:'Data source',
         about_desc:'Asset Market is a marketplace for renting and buying collectible Telegram gifts (NFTs) on the TON blockchain. Payments go directly from your wallet, and the gift is credited to your account as soon as the transaction is confirmed on-chain.',
-        version_label:'Version', copied:'Copied', refreshed:'Refreshed',
+        copied:'Copied', refreshed:'Refreshed',
         price_range:'Price, TON', discount_only:'Discounted only', sort_label:'Sort by',
         from_label:'from', to_label:'to', any:'Any', wallet_balance:'Wallet balance',
         ton_note:'The NFT is credited to your account as soon as the transaction is confirmed on the TON network.',
@@ -118,7 +118,7 @@ const TR = {
         topup_title:'💳 Как пополнить кошелёк',
         topup_desc:'Переведите TON на адрес ниже или купите через Tonkeeper / @wallet',
         copy_addr:'Скопировать адрес',
-        great:'Отлично!', about:'О сервисе', network:'Сеть', fee:'Комиссия',
+        great:'Отлично!', about:'О сервисе', network:'Сеть',
         language_label:'Язык',
         err_no_backend:'BACKEND_URL не задан — добавьте window.BACKEND_URL в rent.html',
         err_marketapp_setup:'Настройте MarketApp: зайдите на marketapp.ws, подключите кошелёк и вручную арендуйте любой NFT.',
@@ -137,7 +137,7 @@ const TR = {
         faq:'Частые вопросы', how_it_works:'Как это работает',
         provider:'Поставщик', data_source:'Источник данных',
         about_desc:'Asset Market — маркетплейс для аренды и покупки коллекционных Telegram-подарков (NFT) в сети TON. Оплата проходит напрямую с вашего кошелька, а подарок зачисляется на аккаунт сразу после подтверждения транзакции в блокчейне.',
-        version_label:'Версия', copied:'Скопировано', refreshed:'Обновлено',
+        copied:'Скопировано', refreshed:'Обновлено',
         price_range:'Цена, TON', discount_only:'Только со скидкой', sort_label:'Сортировка',
         from_label:'от', to_label:'до', any:'Любая', wallet_balance:'Баланс кошелька',
         ton_note:'NFT зачисляется на ваш аккаунт сразу после подтверждения транзакции в сети TON.',
@@ -576,35 +576,28 @@ function closeFilterSheet() { $('filter-sheet').hidden = true; }
 
 function buildFilterSheet() {
     const body = $('filter-sheet-body');
-    const sections = [
-        { key: 'collection', label: t('collection'), opts: state.filterOptions.collections },
-        { key: 'model',      label: t('model'),      opts: state.filterOptions.models      },
-        { key: 'backdrop',   label: t('backdrop'),   opts: state.filterOptions.backdrops   },
-        { key: 'symbol',     label: t('symbol'),     opts: state.filterOptions.symbols     },
-    ];
-    const attrHtml = sections.map(sec => {
-        if (!sec.opts.length) return '';
-        const chips = [{ val: null, label: t('all') }, ...sec.opts.map(v => ({ val: v, label: v }))]
-            .map(o => {
-                const active = state.filters[sec.key] === o.val;
-                return `<button class="fs-chip${active ? ' active' : ''}"
-                    data-sec="${esc(sec.key)}" data-val="${esc(o.val ?? '')}">${esc(o.label)}</button>`;
-            }).join('');
-        return `<div>
-            <div class="fs-section-title">${esc(sec.label)}</div>
-            <div class="fs-chips">${chips}</div>
-        </div>`;
-    }).join('');
 
-    // Price range from currently loaded items
+    function countFor(field, val) {
+        return state.items.filter(g => g[field] === val).length;
+    }
+
+    const sections = [
+        { key: 'collection', field: 'collection_name', label: t('collection'), opts: state.filterOptions.collections },
+        { key: 'model',      field: 'model',           label: t('model'),      opts: state.filterOptions.models      },
+        { key: 'backdrop',   field: 'backdrop',        label: t('backdrop'),   opts: state.filterOptions.backdrops   },
+        { key: 'symbol',     field: 'symbol',          label: t('symbol'),     opts: state.filterOptions.symbols     },
+    ];
+
     const prices = state.items.map(itemPrice).filter(p => p > 0);
     const lo = prices.length ? Math.floor(Math.min(...prices)) : 0;
-    const hi = prices.length ? Math.ceil(Math.max(...prices))  : 100;
-    const curMin = state.filters.priceMin ?? lo;
-    const curMax = state.filters.priceMax ?? hi;
-    const priceHtml = `
-        <div>
-            <div class="fs-section-title">${esc(t('price_range'))}</div>
+    const hi = prices.length ? Math.ceil(Math.max(...prices)) : 100;
+
+    let html = `<div class="fs-section open">
+        <button class="fs-section-hdr" type="button">
+            <span class="fs-section-name">${esc(t('price_range'))}</span>
+            <svg class="fs-chevron" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+        <div class="fs-section-body">
             <div class="fs-price-row">
                 <div class="fs-price-field">
                     <span class="fs-price-cap">${esc(t('from_label'))}</span>
@@ -619,20 +612,90 @@ function buildFilterSheet() {
                 </div>
                 <span class="fs-price-unit">TON</span>
             </div>
+        </div>
+    </div>`;
+
+    if (state.mode === 'rent') {
+        html += `<div class="fs-section open">
+            <div class="fs-section-body fs-section-body--notop">
+                <div class="fs-row-item">
+                    <div class="fs-row-left">
+                        <span class="fs-row-label">🎉 ${esc(t('discount_only'))}</span>
+                    </div>
+                    <div class="fs-tgl${state.filters.discountOnly ? ' active' : ''}" id="fs-discount-toggle">
+                        <span class="fs-tgl-knob"></span>
+                    </div>
+                </div>
+            </div>
         </div>`;
+    }
 
-    // Discount-only toggle (rent mode only)
-    const discountHtml = state.mode === 'rent' ? `
-        <div>
-            <button class="fs-toggle${state.filters.discountOnly ? ' active' : ''}" id="fs-discount-toggle">
-                <span class="fs-toggle-label">🎉 ${esc(t('discount_only'))}</span>
-                <span class="fs-toggle-track"><span class="fs-toggle-knob"></span></span>
+    sections.forEach(sec => {
+        if (!sec.opts.length) return;
+        const active = state.filters[sec.key];
+        html += `<div class="fs-section${active !== null ? ' open' : ''}">
+            <button class="fs-section-hdr" type="button" data-sec="${esc(sec.key)}">
+                <span class="fs-section-name">${esc(sec.label)}</span>
+                ${active !== null ? `<span class="fs-section-badge">1</span>` : ''}
+                <svg class="fs-chevron" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
             </button>
-        </div>` : '';
+            <div class="fs-section-body">
+                <label class="fs-row-item">
+                    <div class="fs-row-left">
+                        <div class="fs-chk${active === null ? ' checked' : ''}"></div>
+                        <span class="fs-row-label">${esc(t('all'))}</span>
+                    </div>
+                    <span class="fs-row-count">${state.items.length}</span>
+                    <input type="radio" name="fsr-${esc(sec.key)}" value="" class="fs-radio" ${active === null ? 'checked' : ''}>
+                </label>
+                ${sec.opts.map(val => {
+                    const cnt = countFor(sec.field, val);
+                    const sel = active === val;
+                    return `<label class="fs-row-item">
+                        <div class="fs-row-left">
+                            <div class="fs-chk${sel ? ' checked' : ''}"></div>
+                            <span class="fs-row-label">${esc(val)}</span>
+                        </div>
+                        <span class="fs-row-count">${cnt}</span>
+                        <input type="radio" name="fsr-${esc(sec.key)}" value="${esc(val)}" class="fs-radio" ${sel ? 'checked' : ''}>
+                    </label>`;
+                }).join('')}
+            </div>
+        </div>`;
+    });
 
-    body.innerHTML = priceHtml + discountHtml + attrHtml;
+    body.innerHTML = html;
 
-    // Wire price inputs
+    body.querySelectorAll('.fs-section-hdr').forEach(hdr => {
+        hdr.addEventListener('click', () => {
+            hdr.closest('.fs-section').classList.toggle('open');
+        });
+    });
+
+    body.querySelectorAll('.fs-radio').forEach(radio => {
+        radio.addEventListener('change', () => {
+            const sec = radio.name.slice(4);
+            const val = radio.value || null;
+            state.filters[sec] = val;
+            const secEl = radio.closest('.fs-section');
+            const radios = [...secEl.querySelectorAll('.fs-radio')];
+            secEl.querySelectorAll('.fs-chk').forEach((cb, i) => {
+                cb.classList.toggle('checked', radios[i]?.checked ?? false);
+            });
+            const sHdr = secEl.querySelector('.fs-section-hdr');
+            let badge = sHdr.querySelector('.fs-section-badge');
+            if (val) {
+                if (!badge) {
+                    badge = document.createElement('span');
+                    badge.className = 'fs-section-badge';
+                    sHdr.insertBefore(badge, sHdr.querySelector('.fs-chevron'));
+                }
+                badge.textContent = '1';
+            } else if (badge) { badge.remove(); }
+            if (tg) tg.HapticFeedback?.selectionChanged();
+        });
+    });
+
     const minIn = $('fs-price-min'), maxIn = $('fs-price-max');
     minIn?.addEventListener('input', () => {
         const v = parseFloat(minIn.value);
@@ -643,22 +706,10 @@ function buildFilterSheet() {
         state.filters.priceMax = Number.isFinite(v) ? v : null;
     });
 
-    // Wire discount toggle
     $('fs-discount-toggle')?.addEventListener('click', () => {
         state.filters.discountOnly = !state.filters.discountOnly;
         $('fs-discount-toggle').classList.toggle('active', state.filters.discountOnly);
         if (tg) tg.HapticFeedback?.selectionChanged();
-    });
-
-    body.querySelectorAll('.fs-chip').forEach(chip => {
-        chip.addEventListener('click', () => {
-            const sec = chip.dataset.sec;
-            const val = chip.dataset.val || null;
-            state.filters[sec] = val;
-            body.querySelectorAll(`.fs-chip[data-sec="${sec}"]`).forEach(c =>
-                c.classList.toggle('active', c.dataset.val === (val || '')));
-            if (tg) tg.HapticFeedback?.selectionChanged();
-        });
     });
 }
 
@@ -1068,7 +1119,6 @@ async function loadSettings() {
     try {
         const h = await api('/health');
         $('net-info').textContent    = h.network === 'testnet' ? 'TON Testnet' : 'TON Mainnet';
-        $('markup-info').textContent = `~${h.markup_percent}%`;
     } catch { /* ignore */ }
 }
 
